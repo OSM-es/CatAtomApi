@@ -18,7 +18,7 @@ Sin parámetros
   - prov: [{`prov code:99`, `name`},... ]
 
 ## Municipios
-* url: /prov/<prov code:99>
+* url: /prov/`prov code:99`
 
 ### GET
 Lista los municipios disponibles.
@@ -33,7 +33,7 @@ Sin parámetros
   - msg: El Código Provincial '`prov code:99`' no es válido
 
 ## Divisiones
-* url: /mun/<mun code:99999>
+* url: /mun/`mun code:99999`
 
 ### GET
 Lista las divisiones (distritos o barrios) disponibles.

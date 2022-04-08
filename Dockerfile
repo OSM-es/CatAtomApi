@@ -22,6 +22,7 @@ USER root
 
 WORKDIR $APP_PATH
 COPY requisites/ requisites/
+RUN pip install -r requisites/base.txt
 RUN pip install -r $REQUISITES
 
 FROM base AS production_stage
