@@ -15,7 +15,7 @@ Sin parámetros
 
 #### Respuesta
 * 200 Success
-  - prov: [{`prov code:99`, `name`},... ]
+  - provinces: [{`prov code:99`, `name`},... ]
 
 ## Municipios
 * url: /prov/`prov code:99`
@@ -28,7 +28,9 @@ Sin parámetros
 
 #### Respuesta
 * 200 Success
-  - prov: [{`mun code:99999`, `name`},... ]
+  - prov_code: Código de provincia
+  - name: Nombre de la provincia
+  - municipalities: [{`mun code:99999`, `name`},... ] Lista de códigos y municipios
 * 400 Bad Request
   - msg: El Código Provincial '`prov code:99`' no es válido
 
