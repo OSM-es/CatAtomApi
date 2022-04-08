@@ -1,0 +1,3 @@
+[submodule "catatom2osm"]
+	path = catatom2osm
+	url = https://github.com/OSM-es/CatAtom2OSM
