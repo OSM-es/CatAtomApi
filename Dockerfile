@@ -2,6 +2,7 @@ ARG APP_ENV=prod
 ARG user=catastro
 ARG group=catastro
 ARG home=/catastro
+ARG port=5000
 
 FROM catatom2osm AS base
 
@@ -32,8 +33,12 @@ FROM ${APP_ENV}_stage AS final
 ARG user
 ARG group
 ARG home
+ARG port
 
 RUN chown -R $user:$group $APP_PATH
 
+EXPOSE $port
+
 USER $user
-WORKDIR $home
+
+CMD [ "python3", "api/api.py" ]

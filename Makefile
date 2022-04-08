@@ -11,3 +11,12 @@ submodules:  ## Update submodules
 build:  ## Build docker image
 	@make -C catatom2osm build
 	@docker build -t catatomapi .
+	
+.PHONY: run
+run:  ## Run docker container
+	@docker run -d --name catatomapi -p 5000:5000 catatomapi
+
+.PHONY: logs
+logs:  ## Show container logs
+	@docker logs catatomapi -f
+
