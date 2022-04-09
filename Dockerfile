@@ -10,9 +10,6 @@ LABEL maintainer="javiersanp@gmail.com"
 
 ARG FLASK_ENV
 ARG REQUISITES=requisites/$FLASK_ENV.txt
-ARG user
-ARG group
-ARG home
 
 ENV APP_PATH=/opt/CatAtomAPI
 ENV PYTHONPATH=$PYTHONPATH:$APP_PATH
@@ -21,8 +18,8 @@ USER root
 
 WORKDIR $APP_PATH
 COPY requisites/ requisites/
-RUN pip install -r requisites/base.txt
-RUN pip install -r $REQUISITES
+RUN pip install -r requisites/base.txt && \
+    pip install -r $REQUISITES
 
 FROM base AS production_stage
 ONBUILD COPY . .
@@ -39,7 +36,9 @@ ARG FLASK_APP
 ENV FLASK_APP=$FLASK_APP
 ENV FLASK_PORT=$FLASK_PORT
 
-RUN chown -R $user:$group $APP_PATH
+RUN chown -R $user:$group $APP_PATH && \
+    chown -R www-data:www-data /catastro && \
+    usermod -a -G www-data $user
 
 EXPOSE $FLASK_PORT
 
