@@ -41,6 +41,7 @@ class Provinces(Resource):
     def get(self):
         """Devuelve lista de provincias."""
         data={
+            "x": "z",
             "provinces": cat_config.prov_codes,
         }
         return data

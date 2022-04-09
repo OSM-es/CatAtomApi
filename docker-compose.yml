@@ -1,0 +1,16 @@
+version: '3.3'
+
+services:
+  web:
+    build:
+      context: .
+      args:
+        - FLASK_ENV=production
+    restart: always
+    volumes:
+      - ${HOME}:/catastro
+    ports:
+      - "5000:5000"
+    expose:
+      - "5000"
+

@@ -1,4 +1,4 @@
-USER = catastro
+CAT_USER = catastro
 GROUP = catastro
 CAT_HOME = /home/catastro
 UID = 900
@@ -13,9 +13,9 @@ help:  ## Show this help
 $(CAT_HOME):
 	@mkdir -p "$(CAT_HOME)" && chown $(UID):$(GID) "$(CAT_HOME)"
 	@addgroup --gid $(GID) $(GROUP)
-	@useradd -d "$(CAT_HOME)" -u $(UID) -g $(GROUP) -s /usr/sbin/nologin $(USER)
-	@usermod -a -G www-data $(USER)
-	@usermod -a -G docker $(USER)
+	@useradd -d "$(CAT_HOME)" -u $(UID) -g $(GROUP) -s /usr/sbin/nologin $(CAT_USER)
+	@usermod -a -G www-data $(CAT_USER)
+	@usermod -a -G docker $(CAT_USER)
 
 .PHONY: catatom2osm
 catatom2osm: $(CAT_HOME)  ## Add catato2osm submodule
