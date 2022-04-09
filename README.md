@@ -6,7 +6,7 @@ Docker https://www.docker.com/get-started
 
 ## Instalación
 
-    make build
+    sudo make build
 
 ## Uso
 

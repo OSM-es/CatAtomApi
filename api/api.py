@@ -88,7 +88,8 @@ class Job(Resource):
     def post(self, mun_code):
         # TODO: recoger parámetros buiding, address, split
         # TODO: meter en try y tratar excepciones
-        # errores de overpass
+        # TODO: errores de overpass
+        # TODO: ajustar un log separado para cada trabajo
         """Procesa un municipio."""
         fn = os.path.join(cat_config.app_path, "municipalities.csv")
         result = csvtools.get_key(fn, mun_code)
