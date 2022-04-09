@@ -32,7 +32,7 @@ build: submodules  ## Build docker image
 	
 .PHONY: up
 up: build  ## Start docker container as a service
-	@docker run -d --name catatomapi -p 5000:5000 -v /var/catastro:/catastro catatomapi
+	@docker-compose up -d
 
 .PHONY: logs
 logs:  ## Show container logs

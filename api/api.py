@@ -13,6 +13,7 @@ from catatom2osm.app import CatAtom2Osm, QgsSingleton
 WORK_DIR = "/catastro"
 app = Flask(__name__)
 api = Api(app)
+log = config.setup_logger()
 
 default_options = dict(
     address=True,
