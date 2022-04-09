@@ -12,7 +12,6 @@ Docker https://www.docker.com/get-started
 
 Levantar el servicio
 
-    sudo su catastro
     make up
 
 Para otros usos ver el Makefile

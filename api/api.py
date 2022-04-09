@@ -13,7 +13,6 @@ from catatom2osm.app import CatAtom2Osm, QgsSingleton
 WORK_DIR = "/catastro"
 app = Flask(__name__)
 api = Api(app)
-log = cat_config.setup_logger()
 
 default_options = dict(
     address=True,
@@ -112,6 +111,7 @@ class Job(Resource):
         options = argparse.Namespace(**default_options)
         options.path = [mun_code]
         options.args = mun_code
+        log = cat_config.setup_logger(log_path=mun_code)
         CatAtom2Osm.create_and_run(mun_code, options)
         return {"msg": _("Start processing '%s'").format(mun_code)}
 
@@ -129,4 +129,4 @@ api.add_resource(Job,'/job/<string:mun_code>')
 @app.route("/")
 def hello_world():
    return f"{cat_config.app_name} {cat_config.app_version} API"
- 
+

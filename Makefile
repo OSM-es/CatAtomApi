@@ -21,12 +21,13 @@ catatom2osm: install  ## Add catato2osm submodule
 
 .PHONY: submodules
 submodules: catatom2osm  ## Update submodules
-	@git submodule update --init
+	@git submodule update --init --recursive
+	@git submodule update --remote --merge
 
 .PHONY: build
 build: submodules  ## Build docker image
 	@make -C catatom2osm build
-	@docker build -t catatomapi .
+	@docker-compose build
 	
 .PHONY: up
 up: build  ## Start docker container as a service
@@ -37,7 +38,7 @@ logs:  ## Show container logs
 	@docker-compose logs -f web
 
 .PHONY: down
-down: build  ## Stop service
+down:  ## Stop service
 	@docker-compose down
 
 .PHONY: debug
