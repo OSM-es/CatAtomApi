@@ -15,7 +15,7 @@ Sin parámetros
 
 #### Respuesta
 * 200 Success
-  - provinces: [{`prov code:99`, `name`},... ]
+  - {"provincias":[ {"cod_provincia":"02", "nombre":"Albacete"},...]}
 
 ## Municipios
 * url: /prov/`prov code:99`
@@ -30,7 +30,7 @@ Sin parámetros
 * 200 Success
   - prov_code: Código de provincia
   - name: Nombre de la provincia
-  - municipalities: [{`mun code:99999`, `name`},... ] Lista de códigos y municipios
+  - {"municipios":[ {"cod_municipio":"02001", "nombre":"Abengibre"},...]} Lista de códigos y municipios
 * 400 Bad Request
   - msg: El Código Provincial '`prov code:99`' no es válido
 
@@ -45,7 +45,7 @@ Sin parámetros
 
 #### Respuesta
 * 200 Success
-  - divs: [{`osm-id`, `name`},... ]
+  - {"divisiones":[ {"osm_id":"1234567890", "nombre":"Nombre del distrito o barrio"},...]}
 * 400 Bad Request
   - msg: El Código Provincial '`prov code:99`' no es válido
 * 404 Not Found
