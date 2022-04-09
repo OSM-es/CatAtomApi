@@ -7,19 +7,12 @@ from flask_restful import abort, Api, Resource
 
 from catatom2osm import config as cat_config
 from catatom2osm import csvtools
+# TODO: depurar ResourceWarning: unclosed <socket.socket
 from catatom2osm.app import CatAtom2Osm, QgsSingleton
 
 WORK_DIR = "/catastro"
 app = Flask(__name__)
 api = Api(app)
-qgs = QgsSingleton()        
-
-
-def shutdown():
-    qgs.exitQgis()
-    
-atexit.register(shutdown)
-
 
 default_options = dict(
     address=True,
@@ -35,6 +28,17 @@ default_options = dict(
     parcel=[],
     log_level='INFO',
 )
+
+
+def shutdown():
+    qgs.exitQgis()
+
+if app.config.get("ENV", "") == "production":
+    qgs = QgsSingleton()        
+    atexit.register(shutdown)
+
+
+# TODO: login
 
 
 class Provinces(Resource):
@@ -67,8 +71,24 @@ class Province(Resource):
         return data
 
 
+# TODO: divisiones
+# igual que catato2osm.boundary. Crear función get_districts alli
+# llamada desde list_districts para imprimir
+
+
 class Job(Resource):
+    # TODO: get
+    #  crear funcion para comprobar estado
+    #  si existe directorio mun_code
+    #    "review" si existe highway_names.csv
+    #    "finished" si existe mun_code/tasks
+    #    "running" si no
+    #  "available" si no existe directorio mun_code
+    
     def post(self, mun_code):
+        # TODO: recoger parámetros buiding, address, split
+        # TODO: meter en try y tratar excepciones
+        # errores de overpass
         """Procesa un municipio."""
         fn = os.path.join(cat_config.app_path, "municipalities.csv")
         result = csvtools.get_key(fn, mun_code)
@@ -76,15 +96,27 @@ class Job(Resource):
             msg = _("Municipality code '%s' don't exists") % mun_code
             abort(404, message=msg)
         os.chdir(WORK_DIR)
+        prov_code = mun_code[0:2]
+        if prov_code not in cat_config.prov_codes.keys():
+            msg = _("Province code '%s' is not valid") % prov_code
+            abort(404, message=msg)
         if os.path.exists(mun_code):
+            # TODO: comprobar estado y diferenciar el mensaje
             msg = f"El municipio '{mun_code}' está siendo procesado"
             abort(409, message=msg)
         os.mkdir(mun_code)
+        # TODO: crear dentro del directorio `mun_code` archivo user.txt
+        # con el nombre de usuario para marcar el dueño
         options = argparse.Namespace(**default_options)
         options.path = [mun_code]
         options.args = mun_code
         CatAtom2Osm.create_and_run(mun_code, options)
         return {"msg": _("Start processing '%s'").format(mun_code)}
+
+
+    # TODO: put igual que get pero sin comprobar si existe
+    
+    # TODO: delete comprobar estado y borrar directorio si está terminado
 
 
 api.add_resource(Provinces,'/prov')

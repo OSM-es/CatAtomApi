@@ -39,6 +39,6 @@ logs:  ## Show container logs
 	@docker logs catatomapi -f
 
 .PHONY: debug
-debug: build  ## Run docker container in debug mode
+debug:  ## Run docker container in debug mode
 	@docker run -it --rm -p 5001:5001 -e FLASK_ENV=development -e FLASK_PORT=5001 -v $(PWD):/opt/CatAtomAPI -v /var/catastro:/catastro catatomapi
 
