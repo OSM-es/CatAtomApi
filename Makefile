@@ -18,7 +18,7 @@ build: submodules  ## Build docker image
 	
 .PHONY: run
 run: build  ## Run docker container
-	@docker run -d --name catatomapi -p 5000:5000 catatomapi
+	@docker run -d --name catatomapi -p 5000:5000 -v /var/catastro:/catastro catatomapi
 
 .PHONY: logs
 logs:  ## Show container logs
@@ -26,5 +26,5 @@ logs:  ## Show container logs
 
 .PHONY: debug
 debug: build  ## Run docker container in debug mode
-	@docker run -it --rm -p 5001:5001 -e FLASK_ENV=development -e FLASK_PORT=5001 -v $(PWD):/opt/CatAtomAPI catatomapi
+	@docker run -it --rm -p 5001:5001 -e FLASK_ENV=development -e FLASK_PORT=5001 -v $(PWD):/opt/CatAtomAPI -v /var/catastro:/catastro catatomapi
 

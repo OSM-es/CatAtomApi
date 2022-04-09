@@ -3,7 +3,6 @@ ARG FLASK_APP=api/api.py
 ARG FLASK_PORT=5000
 ARG user=catastro
 ARG group=catastro
-ARG home=/catastro
 
 FROM catatom2osm AS base
 
@@ -45,7 +44,5 @@ RUN chown -R $user:$group $APP_PATH
 EXPOSE $FLASK_PORT
 
 USER $user
-
-RUN echo $FLASK_PORT
 
 CMD flask run --host 0.0.0.0 --port $FLASK_PORT
