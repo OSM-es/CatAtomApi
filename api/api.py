@@ -44,9 +44,12 @@ if app.config.get("ENV", "") == "production":
 class Provinces(Resource):
     def get(self):
         """Devuelve lista de provincias."""
-        data={
-            "x": "z",
-            "provinces": cat_config.prov_codes,
+        provinces = [
+            {"cod_provincia": cod_provincia, "nombre": nombre}
+            for cod_provincia, nombre in cat_config.prov_codes.items()
+        ]
+        data = {
+            "provincias": provinces,
         }
         return data
   
@@ -60,13 +63,13 @@ class Province(Resource):
             abort(404, message=msg)
         office = cat_config.prov_codes[prov_code]
         municipalities = [
-            {"mun_code": mun[0], "name": mun[2]}
+            {"cod_municipio": mun[0], "nombre": mun[2]}
             for mun in csvtools.startswith(fn, prov_code)
         ]
         data={
-            "prov_code": prov_code,
-            "name": office, 
-            "municipalities": municipalities,
+            "cod_provincia": prov_code,
+            "nombre": office, 
+            "municipios": municipalities,
         }
         return data
 
@@ -113,7 +116,7 @@ class Job(Resource):
         options.args = mun_code
         log = cat_config.setup_logger(log_path=mun_code)
         CatAtom2Osm.create_and_run(mun_code, options)
-        return {"msg": _("Start processing '%s'").format(mun_code)}
+        return {"mensage": _("Start processing '%s'").format(mun_code)}
 
 
     # TODO: put igual que get pero sin comprobar si existe

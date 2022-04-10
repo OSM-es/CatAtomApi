@@ -28,11 +28,11 @@ Sin parámetros
 
 #### Respuesta
 * 200 Success
-  - prov_code: Código de provincia
-  - name: Nombre de la provincia
+  - cod_provincia: Código de provincia
+  - nombre: Nombre de la provincia
   - {"municipios":[ {"cod_municipio":"02001", "nombre":"Abengibre"},...]} Lista de códigos y municipios
 * 400 Bad Request
-  - msg: El Código Provincial '`prov code:99`' no es válido
+  - message: El Código Provincial '`prov code:99`' no es válido
 
 ## Divisiones
 * url: /mun/`mun code:99999`
@@ -47,13 +47,13 @@ Sin parámetros
 * 200 Success
   - {"divisiones":[ {"osm_id":"1234567890", "nombre":"Nombre del distrito o barrio"},...]}
 * 400 Bad Request
-  - msg: El Código Provincial '`prov code:99`' no es válido
+  - message: El Código Provincial '`prov code:99`' no es válido
 * 404 Not Found
-  - msg: El código de municipio '`mun code:99999`' no existe
+  - message: El código de municipio '`mun code:99999`' no existe
 * 502 Bad Gateway
-  - msg: No se puede acceder al servidor Overpass
+  - message: No se puede acceder al servidor Overpass
 * 504 Gateway Timeout
-  - msg: Tiempo de respuesta agotado del servidor Overpass
+  - message: Tiempo de respuesta agotado del servidor Overpass
 
 ## Procesar
 * url: /job/`mun code`
@@ -66,16 +66,16 @@ Sin parámetros.
 
 #### Respuesta
 * 200 Success
-  - status: string. "available", "running", "finished", "review"
-  - user: Usuario que lanzó el proceso (si status=running).
-  - log: string. Archivo de registro (si status=running).
-  - url: string Página de resultados (si status=finished. Pagina de revisión de nombres de calles (si status=review)
+  - estado: string. "disponible", "ejecutando", "terminado", "revisar"
+  - usuario: Usuario que lanzó el proceso (si estado=disponible).
+  - log: string. Archivo de registro (si status=ejecutando).
+  - url: string Página de resultados (si status=terminado. Pagina de revisión de nombres de calles (si estado=revisar)
 * 400 Bad Request
-  - msg: El Código Provincial '`prov code:99`' no es válido
+  - message: El Código Provincial '`prov code:99`' no es válido
 * 401 Unauthorized
-  - msg: Se requiere autenticación
+  - message: Se requiere autenticación
 * 404 Not Found
-  - msg: El código de municipio '`mun code:99999`' no existe
+  - message: El código de municipio '`mun code:99999`' no existe
 
 ### POST
 Crea un proceso.
@@ -87,22 +87,22 @@ Crea un proceso.
 
 #### Respuesta
 * 200 Success
-  - msg: Se inicia el proceso de '`mun code:99999`', Se reanuda el proceso de '`mun code:9999`'
+  - message: Se inicia el proceso de '`mun code:99999`', Se reanuda el proceso de '`mun code:9999`'
 * 400 Bad Request
-  - msg: El Código Provincial '`prov code:99`' no es válido
+  - message: El Código Provincial '`prov code:99`' no es válido
 * 401 Unauthorized
-  - msg: Se requiere autenticación
+  - message: Se requiere autenticación
 * 404 Not Found
-  - msg: El código de municipio '`mun code:99999`' no existe
+  - message: El código de municipio '`mun code:99999`' no existe
 * 405 Method Not Allowed
-  - msg: Se deben comprobar los nombres de las calles
+  - message: Se deben comprobar los nombres de las calles
   - url: string. Pagina de revisión de nombres de calles
 * 409 Conflict
-  - msg: El municipio '`mun code:99999`' está siendo procesado por `user`
+  - message: El municipio '`mun code:99999`' está siendo procesado por `user`
 * 502 Bad Gateway
-  - msg: No se puede acceder al servidor Overpass
+  - message: No se puede acceder al servidor Overpass
 * 504 Gateway Timeout
-  - msg: Tiempo de respuesta agotado del servidor Overpass
+  - message: Tiempo de respuesta agotado del servidor Overpass
 
 ### PUT
 Sobreescribe un proceso.
@@ -114,21 +114,21 @@ Sobreescribe un proceso.
 
 #### Respuesta
 * 200 Success
-  - msg: Se reinicia el proceso de 'mun code:9999>
+  - message: Se reinicia el proceso de 'mun code:9999>
 * 400 Bad Request
-  - msg: El Código Provincial '`prov code:99`' no es válido
+  - message: El Código Provincial '`prov code:99`' no es válido
 * 401 Unauthorized
-  - msg: Se requiere autenticación
+  - message: Se requiere autenticación
 * 403 Forbidden
-  - msg: El proceso del municipio '`mun code:99999`' corresponde a `user`
+  - message: El proceso del municipio '`mun code:99999`' corresponde a `user`
 * 404 Not Found
-  - msg: El código de municipio '`mun code:99999`' no existe
+  - message: El código de municipio '`mun code:99999`' no existe
 * 409 Conflict
-  - msg: El municipio '`mun code:99999`' está siendo procesado por `user`
+  - message: El municipio '`mun code:99999`' está siendo procesado por `user`
 * 502 Bad Gateway
-  - msg: No se puede acceder al servidor Overpass
+  - message: No se puede acceder al servidor Overpass
 * 504 Gateway Timeout
-  - msg: Tiempo de respuesta agotado del servidor Overpass
+  - message: Tiempo de respuesta agotado del servidor Overpass
 
 ### DELETE
 Elimina un proceso.
@@ -138,14 +138,14 @@ Sin parámetros.
 
 #### Respuesta
 * 200 Success
-  - msg: Se ha eliminado el municipio '`mun code:99999`'
+  - message: Se ha eliminado el municipio '`mun code:99999`'
 * 400 Bad Request
-  - msg: El Código Provincial '`prov code:99`' no es válido
+  - message: El Código Provincial '`prov code:99`' no es válido
 * 401 Unauthorized
-  - msg: Se requiere autenticación
+  - message: Se requiere autenticación
 * 403 Forbidden
-  - msg: El proceso del municipio '`mun code:99999`' corresponde a `user`
+  - message: El proceso del municipio '`mun code:99999`' corresponde a `user`
 * 404 Not Found
-  - msg: El código de municipio '`mun code:99999`' no existe
+  - message: El código de municipio '`mun code:99999`' no existe
 * 409 Conflict
-  - msg: El municipio '`mun code:99999`' está siendo procesado por `user`
+  - message: El municipio '`mun code:99999`' está siendo procesado por `user`
