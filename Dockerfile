@@ -1,5 +1,5 @@
 ARG FLASK_ENV=production
-ARG FLASK_APP=api/api.py
+ARG FLASK_APP=api.py
 ARG FLASK_PORT=5000
 ARG user=catastro
 ARG group=catastro
@@ -13,6 +13,7 @@ ARG REQUISITES=requisites/$FLASK_ENV.txt
 
 ENV APP_PATH=/opt/CatAtomAPI
 ENV PYTHONPATH=$PYTHONPATH:$APP_PATH
+ENV QT_QPA_PLATFORM=offscreen
 
 USER root
 
