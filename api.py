@@ -1,19 +1,38 @@
 import os
 
-from flask import Flask, redirect
-from flask_restful import abort, Api, Resource
+from flask import Flask, redirect, request
+from flask_restful import abort, Api, reqparse, Resource
 
 from catatom2osm import config as cat_config
 from catatom2osm import csvtools
+from catatom2osm.exceptions import CatValueError
 
 import user
-from catwork import CatWork
+from work import Work
 
 
 WORK_DIR = os.environ['HOME']
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_object('config')
 api = Api(app)
+
+status_msg = {
+    Work.Status.RUNNING: (
+        409, "El municipio '{}' está siendo procesado"
+    ),
+    Work.Status.REVIEW: (
+        405, "El municipio '{}' está pendiente de revisar"
+    ),
+    Work.Status.DONE: (
+        405, "El municipio '{}' ya está procesado"
+    ),
+    Work.Status.AVAILABLE: (
+        200, "El municipio '{}' no está procesado"
+    ),
+    Work.Status.ERROR: (
+        200, "El municipio '{}' terminó con error"
+    ),
+}
 
 
 class Login(Resource):
@@ -74,41 +93,49 @@ class Province(Resource):
 
 
 class Job(Resource):
-    # TODO: get
-    #  crear funcion para comprobar estado
-    #  si existe directorio mun_code
-    #    "review" si existe highway_names.csv
-    #    "finished" si existe mun_code/tasks
-    #    "running" si no
-    #  "available" si no existe directorio mun_code
+    def get(self, mun_code):
+        """Estado del proceso de un municipio."""
+        app.logger.info(dict(request.args))
+        linea = int(request.args.get("linea", 0))
+        try:
+            job = Work(mun_code)
+        except CatValueError as e:
+            abort(404, message=str(e))
+        status = job.status()
+        msg = status_msg[status][1].format(mun_code)
+        log = ""
+        if status != Work.Status.AVAILABLE: 
+            log, linea = job.log(linea)
+        return {
+            "estado": str(status).split(".")[-1],
+            "mensage": msg,
+            "linea": linea,
+            "log": log,
+        }
     
     def post(self, mun_code):
         # TODO: recoger parámetros buiding, address, split
-        # TODO: meter en try y tratar excepciones
-        # TODO: errores de overpass
-        # TODO: ajustar un log separado para cada trabajo
+        # TODO: Eliminar barras de progreso
         """Procesa un municipio."""
-        fn = os.path.join(cat_config.app_path, "municipalities.csv")
-        result = csvtools.get_key(fn, mun_code)
-        if not result:
-            msg = _("Municipality code '%s' don't exists") % mun_code
-            abort(404, message=msg)
-        prov_code = mun_code[0:2]
-        if prov_code not in cat_config.prov_codes.keys():
-            msg = _("Province code '%s' is not valid") % prov_code
-            abort(404, message=msg)
-        if os.path.exists(mun_code):
-            # TODO: comprobar estado y diferenciar el mensaje
-            msg = f"El municipio '{mun_code}' está siendo procesado"
-            abort(409, message=msg)
-        # TODO: crear dentro del directorio `mun_code` archivo user.txt
-        # con el nombre de usuario para marcar el dueño
-        job = CatWork(mun_code)
-        job.start()
+        try:
+            job = Work(mun_code)
+        except CatValueError as e:
+            abort(404, message=str(e))
+        status = job.status()
+        if status not in [Work.Status.AVAILABLE, Work.Status.ERROR]:
+            msg = status_msg[status][1].format(mun_code)
+            abort(status_msg[status][0], message=msg)
+        try:
+            # TODO: crear dentro del directorio `mun_code` archivo user.txt
+            # con el nombre de usuario para marcar el dueño
+            job.start()
+        except Exception as e:
+            msg = e.message if getattr(e, "message", "") else str(e)
+            abort(500, message=msg)
         return {"mensage": _("Start processing '%s'") % mun_code}
 
 
-    # TODO: put igual que get pero sin comprobar si existe
+    # TODO: put igual que post pero sin comprobar si existe
     
     # TODO: delete comprobar estado y borrar directorio si está terminado
 

@@ -16,6 +16,22 @@ Redirige usuarios a OSM OAuth
   - oauth_token_secret: secret
   - auth_url: url
 
+## Retorno de registro
+* url: /callback
+
+### GET
+Registra al usuario tras autenticación OAuth
+
+#### Petición
+* next: Url de regreso tras autenticar
+
+#### Respuesta
+* 200 Success
+  - username: nombre de usuario
+  - osm_id: identificador OSM
+  - session_token: token de autenticación (debe pasarse en la cabecera)
+    + "Authorization: Token <session_token>"
+
 ## Provincias
 * url: /prov
 
@@ -74,16 +90,15 @@ Sin parámetros
 Consulta el estado de un proceso.
 
 #### Petición
-Sin parámetros.
+* linea: desde que linea devolver el registro.
 
 #### Respuesta
 * 200 Success
-  - estado: string. "disponible", "ejecutando", "terminado", "revisar"
-  - usuario: Usuario que lanzó el proceso (si estado=disponible).
-  - log: string. Archivo de registro (si status=ejecutando).
-  - url: string Página de resultados (si status=terminado. Pagina de revisión de nombres de calles (si estado=revisar)
-* 400 Bad Request
-  - message: El Código Provincial '`prov code:99`' no es válido
+  - estado: "AVAILABLE", "RUNNING", "DONE", "REVIEW"
+  - mensage: Mensaje de estado extendido 
+  - usuario: Usuario que lanzó el proceso (si estado=AVAILABLE).
+  - log: Líneas del archivo de registro.
+  - linea: número de líneas del archivo de registro.
 * 401 Unauthorized
   - message: Se requiere autenticación
 * 404 Not Found
@@ -107,8 +122,7 @@ Crea un proceso.
 * 404 Not Found
   - message: El código de municipio '`mun code:99999`' no existe
 * 405 Method Not Allowed
-  - message: Se deben comprobar los nombres de las calles
-  - url: string. Pagina de revisión de nombres de calles
+  - message: El municipio '`mun code:99999`' está pendiente de revisar
 * 409 Conflict
   - message: El municipio '`mun code:99999`' está siendo procesado por `user`
 * 502 Bad Gateway
