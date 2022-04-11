@@ -30,7 +30,8 @@ def get_oauth_token():
 
 def get_authorize_url():
     # TODO: next
-    callback = url_for("callback")
+    api_url = current_app.config.get("API_URL", request.host_url)
+    callback = api_url + url_for("callback")
     token, secret = osm.generate_request_token(callback)
     url = f"{osm.expand_url(osm.authorize_url)}?oauth_token={url_quote(token)}"
     return {
@@ -59,6 +60,5 @@ def authorize():
         "username": username,
         "osm_id": osm_id,
         "session_token": session_token,
-        "session": resp,
     }
 
