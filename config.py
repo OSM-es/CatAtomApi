@@ -8,6 +8,8 @@ load_dotenv("api.env")
     
 OSM_SERVER_URL = "https://www.openstreetmap.org"
 SECRET_KEY = os.getenv("FLASK_SECRET_KEY", None)
+if "API_URL" in os.environ:
+    API_URL = os.getenv("API_URL")
 OSM_OAUTH_SETTINGS = {
     "base_url": f"{OSM_SERVER_URL}/api/0.6/",
     "consumer_key": os.getenv("OSM_CONSUMER_KEY", ""),

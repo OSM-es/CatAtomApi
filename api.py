@@ -36,7 +36,6 @@ def private():
 
 
 class Provinces(Resource):
-    @user.auth.login_required
     def get(self):
         """Devuelve lista de provincias."""
         provinces = [
