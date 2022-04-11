@@ -1,23 +1,43 @@
 import os
 
-from flask import Flask
+from flask import Flask, redirect
 from flask_restful import abort, Api, Resource
 
 from catatom2osm import config as cat_config
 from catatom2osm import csvtools
 
+import user
 from catwork import CatWork
-# TODO: depurar ResourceWarning: unclosed <socket.socket
+
 
 WORK_DIR = os.environ['HOME']
-app = Flask(__name__)
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_object('config')
+app.config.from_pyfile('secret.py')
 api = Api(app)
 
 
-# TODO: login
+class Login(Resource):
+    def get(self):
+        return user.get_authorize_url()
+
+
+class Callback(Resource):
+    def get(self):
+        user_params = user.authorize()
+        if user_params is None:
+            abort(404, "Autorización denegada")
+        return user_params
+
+
+@app.route("/priv")
+@user.auth.login_required
+def private():
+    return "private"
 
 
 class Provinces(Resource):
+    @user.auth.login_required
     def get(self):
         """Devuelve lista de provincias."""
         provinces = [
@@ -87,7 +107,7 @@ class Job(Resource):
         # con el nombre de usuario para marcar el dueño
         job = CatWork(mun_code)
         job.start()
-        return {"mensage": _("Start processing '%s'").format(mun_code)}
+        return {"mensage": _("Start processing '%s'") % mun_code}
 
 
     # TODO: put igual que get pero sin comprobar si existe
@@ -95,6 +115,8 @@ class Job(Resource):
     # TODO: delete comprobar estado y borrar directorio si está terminado
 
 
+api.add_resource(Login,'/login')
+api.add_resource(Callback,'/authorized')
 api.add_resource(Provinces,'/prov')
 api.add_resource(Province,'/prov/<string:prov_code>')
 api.add_resource(Job,'/job/<string:mun_code>')

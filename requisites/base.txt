@@ -1,3 +1,5 @@
 Flask==2.1.1
 Flask-RESTful==0.3.9
+Flask-HTTPAuth==4.5.0
+Flask-OAuthlib==0.9.6
 

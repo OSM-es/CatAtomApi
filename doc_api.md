@@ -2,7 +2,19 @@
 Diseño de una API web para interactuar con catatom2osm
 
 ## Registro
-¿OAuth?
+* url: /login
+
+### GET
+Redirige usuarios a OSM OAuth
+
+#### Petición
+* next: Url de regreso tras autenticar
+
+#### Respuesta
+* 200 Success
+  - oauth_token: token
+  - oauth_token_secret: secret
+  - auth_url: url
 
 ## Provincias
 * url: /prov
@@ -30,7 +42,7 @@ Sin parámetros
 * 200 Success
   - cod_provincia: Código de provincia
   - nombre: Nombre de la provincia
-  - {"municipios":[ {"cod_municipio":"02001", "nombre":"Abengibre"},...]} Lista de códigos y municipios
+  - municipios:[ {"cod_municipio":"02001", "nombre":"Abengibre"},...] Lista de códigos y municipios
 * 400 Bad Request
   - message: El Código Provincial '`prov code:99`' no es válido
 
@@ -45,7 +57,7 @@ Sin parámetros
 
 #### Respuesta
 * 200 Success
-  - {"divisiones":[ {"osm_id":"1234567890", "nombre":"Nombre del distrito o barrio"},...]}
+  - "divisiones": [{"osm_id":"1234567890", "nombre":"Nombre del distrito o barrio"},...]
 * 400 Bad Request
   - message: El Código Provincial '`prov code:99`' no es válido
 * 404 Not Found
