@@ -22,14 +22,14 @@ class Work(Process):
         REVIEW = auto()
         ERROR = auto()
 
-    def __init__(self, mun_code):
+    def __init__(self, mun_code, building=True, address=True):
         super(Work, self).__init__()
         self.mun_code = mun_code
         self.options = argparse.Namespace(
             path = [mun_code],
             args = mun_code,
-            address=True,
-            building=True,
+            address=address,
+            building=building,
             comment=False,
             config_file=False,
             download=False,

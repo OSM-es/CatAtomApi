@@ -93,9 +93,13 @@ class Province(Resource):
 
 
 class Job(Resource):
+    def __init__(self):
+        self.post_parser = reqparse.RequestParser()
+        self.post_parser.add_argument('building', type=bool, default=True)
+        self.post_parser.add_argument('address', type=bool, default=True)
+
     def get(self, mun_code):
         """Estado del proceso de un municipio."""
-        app.logger.info(dict(request.args))
         linea = int(request.args.get("linea", 0))
         try:
             job = Work(mun_code)
@@ -114,11 +118,14 @@ class Job(Resource):
         }
     
     def post(self, mun_code):
-        # TODO: recoger parámetros buiding, address, split
+        # TODO: recoger parámetro split
         # TODO: Eliminar barras de progreso
         """Procesa un municipio."""
+        args = self.post_parser.parse_args()
+        app.logger.info(args)
+        # TODO: poner en catatom2osm check de building=address=False
         try:
-            job = Work(mun_code)
+            job = Work(mun_code, **args)
         except CatValueError as e:
             abort(404, message=str(e))
         status = job.status()
@@ -128,7 +135,7 @@ class Job(Resource):
         try:
             # TODO: crear dentro del directorio `mun_code` archivo user.txt
             # con el nombre de usuario para marcar el dueño
-            job.start()
+            pass  # job.start()
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
