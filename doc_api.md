@@ -95,7 +95,7 @@ Consulta el estado de un proceso.
 #### Respuesta
 * 200 Success
   - estado: "AVAILABLE", "RUNNING", "DONE", "REVIEW"
-  - mensage: Mensaje de estado extendido 
+  - mensaje: Mensaje de estado extendido 
   - usuario: Usuario que lanzó el proceso (si estado=AVAILABLE).
   - log: Líneas del archivo de registro.
   - linea: número de líneas del archivo de registro.

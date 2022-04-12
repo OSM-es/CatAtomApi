@@ -79,13 +79,15 @@ class Work(Process):
         else:
             return Work.Status.AVAILABLE
 
-    def log(self, from_line=0):
+    def log(self, from_row=0):
         os.chdir(WORK_DIR)
         log = []
         fn = os.path.join(self.mun_code, "catatom2osm.log")
+        i = 0
         if os.path.exists(fn):
             with open(fn, "r") as fo:
-                for i, line in enumerate(fo.readlines()):
-                    if i >= from_line:
-                        log.append(line.strip("\n"))
+                for row in fo.readlines():
+                    if i >= from_row:
+                        log.append(row.strip("\n"))
+                    i += 1
         return log, i

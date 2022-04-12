@@ -112,7 +112,7 @@ class Job(Resource):
             log, linea = job.log(linea)
         return {
             "estado": str(status).split(".")[-1],
-            "mensage": msg,
+            "mensaje": msg,
             "linea": linea,
             "log": log,
         }
@@ -122,7 +122,6 @@ class Job(Resource):
         # TODO: Eliminar barras de progreso
         """Procesa un municipio."""
         args = self.post_parser.parse_args()
-        app.logger.info(args)
         # TODO: poner en catatom2osm check de building=address=False
         try:
             job = Work(mun_code, **args)
@@ -135,11 +134,11 @@ class Job(Resource):
         try:
             # TODO: crear dentro del directorio `mun_code` archivo user.txt
             # con el nombre de usuario para marcar el dueño
-            pass  # job.start()
+            job.start()
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
-        return {"mensage": _("Start processing '%s'") % mun_code}
+        return {"mensaje": _("Start processing '%s'") % mun_code}
 
 
     # TODO: put igual que post pero sin comprobar si existe
