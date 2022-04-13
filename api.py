@@ -5,6 +5,7 @@ from flask_restful import abort, Api, reqparse, Resource
 
 from catatom2osm import config as cat_config
 from catatom2osm import csvtools
+from catatom2osm.boundary import get_districts
 from catatom2osm.exceptions import CatValueError
 
 import user
@@ -82,17 +83,31 @@ class Province(Resource):
             {"cod_municipio": mun[0], "nombre": mun[2]}
             for mun in csvtools.startswith(fn, prov_code)
         ]
-        data={
+        return {
             "cod_provincia": prov_code,
             "nombre": office, 
             "municipios": municipalities,
         }
-        return data
 
 
-# TODO: divisiones
-# igual que catato2osm.boundary. Crear función get_districts alli
-# llamada desde list_districts para imprimir
+class Municipality(Resource):
+    def get(self, mun_code):
+        """Devuelve lista de distritos/barrios"""
+        try:
+            job = Work(mun_code)
+        except CatValueError as e:
+            abort(404, message=str(e))
+        divisiones = [
+            {
+                "osm_id": district[1],
+                "nombre": f"{'  ' if district[0] else ''}{district[2]} {district[3]}",
+            } 
+            for district in get_districts(mun_code)
+        ]
+        return {
+            "cod_municipio": mun_code,
+            "divisiones": divisiones,
+        }
 
 
 class Job(Resource):
@@ -155,6 +170,7 @@ api.add_resource(Login,'/login')
 api.add_resource(Callback,'/authorized')
 api.add_resource(Provinces,'/prov')
 api.add_resource(Province,'/prov/<string:prov_code>')
+api.add_resource(Municipality,'/mun/<string:mun_code>')
 api.add_resource(Job,'/job/<string:mun_code>')
 
 

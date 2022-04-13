@@ -75,8 +75,6 @@ Sin parámetros
 * 200 Success
   - "divisiones": [{"osm_id":"1234567890", "nombre":"Nombre del distrito o barrio"},...]
 * 400 Bad Request
-  - message: El Código Provincial '`prov code:99`' no es válido
-* 404 Not Found
   - message: El código de municipio '`mun code:99999`' no existe
 * 502 Bad Gateway
   - message: No se puede acceder al servidor Overpass
