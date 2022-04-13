@@ -94,11 +94,13 @@ Consulta el estado de un proceso.
 
 #### Respuesta
 * 200 Success
-  - estado: "AVAILABLE", "RUNNING", "DONE", "REVIEW"
+  - estado: "AVAILABLE", "RUNNING", "REVIEW", "FIXME, "DONE"
   - mensaje: Mensaje de estado extendido 
-  - usuario: Usuario que lanzó el proceso (si estado=AVAILABLE).
+  - usuario: Usuario que lanzó el proceso.
   - log: Líneas del archivo de registro.
   - linea: número de líneas del archivo de registro.
+  - informe: Líneas del archivo de informe.
+  - revisar: Lista de archivos de tareas que hay que revisar.
 * 401 Unauthorized
   - message: Se requiere autenticación
 * 404 Not Found

@@ -21,7 +21,10 @@ status_msg = {
         409, "El municipio '{}' está siendo procesado"
     ),
     Work.Status.REVIEW: (
-        405, "El municipio '{}' está pendiente de revisar"
+        405, "El municipio '{}' está pendiente de revisar direcciones"
+    ),
+    Work.Status.FIXME: (
+        405, "El municipio '{}' está pendiente de revisar problemas"
     ),
     Work.Status.DONE: (
         405, "El municipio '{}' ya está procesado"
@@ -115,6 +118,8 @@ class Job(Resource):
             "mensaje": msg,
             "linea": linea,
             "log": log,
+            "informe": job.report(),
+            "revisar": job.review(),
         }
     
     def post(self, mun_code):
