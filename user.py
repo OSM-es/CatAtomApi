@@ -1,64 +1,52 @@
 import requests
+from xml.etree import ElementTree as ET 
 
-from flask import current_app, request, session, url_for
+from authlib.integrations.flask_client import OAuth
+from flask import current_app, request, url_for
 from flask_httpauth import HTTPTokenAuth
-from flask_oauthlib.client import OAuth
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from werkzeug.urls import url_quote
+
+OSM_SERVER_URL = "https://www.openstreetmap.org"
 
 auth = HTTPTokenAuth(scheme="Token")
-oauth = OAuth()
-osm = oauth.remote_app("osm", app_key="OSM_OAUTH_SETTINGS")
+oauth = OAuth(current_app)
+osm = oauth.register('osm',
+    api_base_url=f"{OSM_SERVER_URL}/api/0.6/",
+    request_token_url=f"{OSM_SERVER_URL}/oauth/request_token",
+    access_token_url=f"{OSM_SERVER_URL}/oauth/access_token",
+    authorize_url=f"{OSM_SERVER_URL}/oauth/authorize",
+)
 
 
 @auth.verify_token
 def verify_token(token):
     serializer = URLSafeTimedSerializer(current_app.secret_key)
     try:
-        user_id = serializer.loads(token, max_age=3600)
+        osm_id = serializer.loads(token, max_age=3600)
     except (SignatureExpired, BadSignature):
         return False
-    return user_id
+    return osm_id
 
-
-@osm.tokengetter
-def get_oauth_token():
-    if "osm_oauth" in session:
-        resp = session["osm_oauth"]
-        return resp["oauth_token"], resp["oauth_token_secret"]
-
-
-def get_authorize_url():
-    # TODO: next
+def get_authorize_url(callback_url = None):
     api_url = current_app.config.get("API_URL", request.host_url)
-    callback = api_url + url_for("callback")
-    token, secret = osm.generate_request_token(callback)
-    url = f"{osm.expand_url(osm.authorize_url)}?oauth_token={url_quote(token)}"
-    return {
-        "oauth_token": token,
-        "oauth_token_secret": secret,
-        "auth_url": url,
-    }
-
+    callback = callback_url or (api_url + url_for("callback"))
+    return osm.authorize_redirect(callback)
 
 def authorize():
-    resp = osm.authorized_response()
-    if resp is None:
+    token = osm.authorize_access_token()
+    current_app.logger.info(token)
+    if token is None:
         return None
-    session["osm_oauth"] = resp
-    response = osm.request("user/details")
-    user = response.data.find("user")
-    osm_id = int(user.attrib["id"])
-    username = user.attrib["display_name"]
+    response = osm.get("user/details", token=token)
+    root = ET.fromstring(response.content)
+    user = root.find("user")
+    osm_id = user.get("id")
+    username = user.get("display_name")
     serializer = URLSafeTimedSerializer(current_app.secret_key)
     session_token = serializer.dumps(osm_id)
-    session["osm_oauthtok"] = (
-        request.args.get("oauth_token"),
-        request.args.get("oauth_token_secret"),
-    )
     return {
-        "username": username,
         "osm_id": osm_id,
+        "username": username,
         "session_token": session_token,
     }
 

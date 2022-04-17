@@ -41,21 +41,17 @@ status_msg = {
 
 class Login(Resource):
     def get(self):
-        return user.get_authorize_url()
+        callback = request.args.get('callback')
+        app.logger.info(callback)
+        return user.get_authorize_url(callback)
 
 
-class Callback(Resource):
+class Authorize(Resource):
     def get(self):
         user_params = user.authorize()
         if user_params is None:
-            abort(404, "Autorización denegada")
+            abort(404, message="Autorización denegada")
         return user_params
-
-
-@app.route("/priv")
-@user.auth.login_required
-def private():
-    return "private"
 
 
 class Provinces(Resource):
@@ -137,6 +133,7 @@ class Job(Resource):
             "revisar": job.review(),
         }
     
+    @user.auth.login_required
     def post(self, mun_code):
         # TODO: recoger parámetro split
         # TODO: Eliminar barras de progreso
@@ -167,7 +164,7 @@ class Job(Resource):
 
 
 api.add_resource(Login,'/login')
-api.add_resource(Callback,'/authorized')
+api.add_resource(Authorize,'/authorize')
 api.add_resource(Provinces,'/prov')
 api.add_resource(Province,'/prov/<string:prov_code>')
 api.add_resource(Municipality,'/mun/<string:mun_code>')

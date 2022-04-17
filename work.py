@@ -63,27 +63,29 @@ class Work(Process):
 
     def run(self):
         mun_code = self.mun_code
-        if not os.path.exists(self.path):
-            os.mkdir(self.path)
-        log = cat_config.setup_logger(log_path=mun_code)
+        if not os.path.exists(self._path()):
+            os.mkdir(self._path())
+        log = cat_config.setup_logger(log_path=self._path())
         log.setLevel(logging.INFO)
         log.app_level = logging.INFO
         try:
-            qgs = QgsSingleton()        
-            CatAtom2Osm.create_and_run(self.path, self.options)
+            qgs = QgsSingleton()
+            os.chdir(self._path())
+            CatAtom2Osm.create_and_run(self._path(), self.options)
             qgs.exitQgis()
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             log.error(msg)
-        for fp in glob.glob(os.path.join(self.path, "*.zip")):
+        for fp in glob.glob(self._path("*.zip")):
             os.remove(fp)
 
     def status(self):
-        if os.path.exists(self.path):
-            with open(self._path("catatom2osm.log"), "r") as fo:
-                log = fo.read()
-                if "ERROR" in log:
-                    return Work.Status.ERROR
+        if os.path.exists(self._path()):
+            if os.path.exists(self._path("catatom2osm.log")):
+                with open(self._path("catatom2osm.log"), "r") as fo:
+                    log = fo.read()
+                    if "ERROR" in log:
+                        return Work.Status.ERROR
             if os.path.exists(self._path("highway_names.csv")):
                 return Work.Status.REVIEW
             if os.path.exists(self._path("review.txt")):
