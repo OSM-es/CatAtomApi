@@ -140,8 +140,10 @@ class Job(Resource):
         """Procesa un municipio."""
         args = self.post_parser.parse_args()
         # TODO: poner en catatom2osm check de building=address=False
+        token = request.headers.get("Authorization", "")[6:]
+        user_data = user.verify_token(token)
         try:
-            job = Work(mun_code, **args)
+            job = Work(mun_code, user_data, **args)
         except CatValueError as e:
             abort(404, message=str(e))
         status = job.status()
