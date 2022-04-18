@@ -51,6 +51,9 @@ class Work(Process):
     def _path(self, *args):
         return os.path.join(self.path, *args)
 
+    def _path_exists(self, *args):
+        return os.path.exists(self._path(*args))
+
     def _get_file(self, filename, from_row=0):
         fn = self._path(filename)
         rows = []
@@ -65,7 +68,7 @@ class Work(Process):
 
     def run(self):
         mun_code = self.mun_code
-        if not os.path.exists(self._path()):
+        if not self._path_exists(self._path()):
             os.mkdir(self._path())
         log = cat_config.setup_logger(log_path=self._path())
         log.setLevel(logging.INFO)
@@ -84,18 +87,19 @@ class Work(Process):
             os.remove(fp)
 
     def status(self):
-        if os.path.exists(self._path()):
-            if os.path.exists(self._path("catatom2osm.log")):
+        if self._path_exists():
+            if self._path_exists("catatom2osm.log"):
                 with open(self._path("catatom2osm.log"), "r") as fo:
                     log = fo.read()
                     if "ERROR" in log:
                         return Work.Status.ERROR
-            if os.path.exists(self._path("highway_names.csv")):
-                return Work.Status.REVIEW
-            if os.path.exists(self._path("review.txt")):
-                return Work.Status.FIXME
-            if os.path.exists(self._path("tasks")):
-                return Work.Status.DONE
+            if self._path_exists("report.txt"):
+                if self._path_exists("highway_names.csv"):
+                    return Work.Status.REVIEW
+                if self._path_exists("review.txt"):
+                    return Work.Status.FIXME
+                if self._path_exists("tasks"):
+                    return Work.Status.DONE
             return Work.Status.RUNNING
         else:
             return Work.Status.AVAILABLE
