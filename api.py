@@ -130,6 +130,7 @@ class Job(Resource):
             "linea": linea,
             "log": log,
             "informe": job.report(),
+            "report": job.report_json(),
             "revisar": job.review(),
         }
     

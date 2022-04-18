@@ -110,10 +110,18 @@ class Work(Process):
     def report(self):
         return self._get_file("report.txt")[0]
 
+    def report_json(self):
+        if self._path_exists("report.json"):
+            with open(self._path("report.json"), "r") as fo:
+                return json.loads(fo.read())
+        return {}
+
     def review(self):
         review = subprocess.run(
             ["bin/review.sh", self.mun_code], capture_output=True, text=True
         )
         output = review.stdout.strip("\n")
-        return output.split("\n")
+        if output:
+            return output.split("\n")
+        return []
 
