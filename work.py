@@ -87,6 +87,7 @@ class Work(Process):
             os.remove(fp)
 
     def status(self):
+        review = self.review()
         if self._path_exists():
             if self._path_exists("catatom2osm.log"):
                 with open(self._path("catatom2osm.log"), "r") as fo:
@@ -96,7 +97,7 @@ class Work(Process):
             if self._path_exists("report.txt"):
                 if self._path_exists("highway_names.csv"):
                     return Work.Status.REVIEW
-                if self._path_exists("review.txt"):
+                if len(review) > 0:
                     return Work.Status.FIXME
                 if self._path_exists("tasks"):
                     return Work.Status.DONE

@@ -140,7 +140,6 @@ class Job(Resource):
         # TODO: Eliminar barras de progreso
         """Procesa un municipio."""
         args = self.post_parser.parse_args()
-        # TODO: poner en catatom2osm check de building=address=False
         token = request.headers.get("Authorization", "")[6:]
         user_data = user.verify_token(token)
         try:
@@ -152,8 +151,6 @@ class Job(Resource):
             msg = status_msg[status][1].format(mun_code)
             abort(status_msg[status][0], message=msg)
         try:
-            # TODO: crear dentro del directorio `mun_code` archivo user.txt
-            # con el nombre de usuario para marcar el dueño
             job.start()
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
