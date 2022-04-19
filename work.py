@@ -32,7 +32,7 @@ class Work(Process):
         self.path = os.path.join(WORK_DIR, self.mun_code)
         self.options = argparse.Namespace(
             path = [mun_code],
-            args = mun_code,
+            args = "",
             address=address,
             building=building,
             comment=False,
@@ -46,6 +46,11 @@ class Work(Process):
             parcel=[],
             log_level='INFO',
         )
+        if address and not building:
+            self.options.args += "-d "
+        if building and not address:
+            self.options.args += "-b "
+        self.options.args += mun_code
         self.osm_id, self.name = boundary.get_municipality(mun_code)
 
     def _path(self, *args):
