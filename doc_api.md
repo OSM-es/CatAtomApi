@@ -111,6 +111,7 @@ Crea un proceso.
 #### Petición
 * building: boolean (por defecto true). Procesa edificios
 * address: boolean (por defecto true). Procesa direcciones
+* idioma: es_ES / ca_ES / gl_ES
 
 #### Respuesta
 * 200 Success
@@ -136,6 +137,7 @@ Sobreescribe un proceso.
 #### Petición
 * building: boolean (por defecto true). Procesa edificios
 * address: boolean (por defecto true). Procesa direcciones
+* idioma: es_ES / ca_ES / gl_ES
 
 #### Respuesta
 * 200 Success

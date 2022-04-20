@@ -16,5 +16,5 @@ SECRET_KEY = os.getenv("FLASK_SECRET_KEY", None)
 if "API_URL" in os.environ:
     API_URL = os.getenv("API_URL")
 OSM_CLIENT_ID = os.getenv("OSM_CLIENT_ID", "")
-OSM_CLIENT_SECRET = os.getenv("OSM_OSM_CLIENT_SECRET", "")
+OSM_CLIENT_SECRET = os.getenv("OSM_CLIENT_SECRET", "")
 SESSION_COOKIE_SAMESITE = "Strict"

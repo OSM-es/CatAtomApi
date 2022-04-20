@@ -26,11 +26,20 @@ class Work(Process):
         FIXME = auto()
         ERROR = auto()
 
-    def __init__(self, mun_code, user=None, split=None, building=True, address=True):
+    def __init__(
+        self,
+        mun_code,
+        user=None,
+        split=None,
+        building=True,
+        address=True,
+        idioma="es_ES",
+    ):
         super(Work, self).__init__()
         self.mun_code = mun_code
         self.user = user
         self.split = split
+        self.idioma = idioma
         self.path = os.path.join(WORK_DIR, self.mun_code)
         self.options = argparse.Namespace(
             path = [mun_code],
@@ -94,6 +103,7 @@ class Work(Process):
         log = cat_config.setup_logger(log_path=self._path())
         log.setLevel(logging.INFO)
         log.app_level = logging.INFO
+        cat_config.set_config(dict(language=self.idioma))
         with open(self._path("user.json"), "w") as fo:
             fo.write(json.dumps(self.user))
         try:

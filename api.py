@@ -109,8 +109,9 @@ class Municipality(Resource):
 class Job(Resource):
     def __init__(self):
         self.post_parser = reqparse.RequestParser()
-        self.post_parser.add_argument('building', type=bool, default=True)
-        self.post_parser.add_argument('address', type=bool, default=True)
+        self.post_parser.add_argument("building", type=bool, default=True)
+        self.post_parser.add_argument("address", type=bool, default=True)
+        self.post_parser.add_argument("idioma", type=str, default="es_ES")
 
     def get(self, mun_code, split=None):
         """Estado del proceso de un municipio."""
