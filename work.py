@@ -3,6 +3,7 @@ import glob
 import json
 import logging
 import os
+import shutil
 import subprocess
 from enum import Enum, auto
 from multiprocessing import Process
@@ -25,10 +26,11 @@ class Work(Process):
         FIXME = auto()
         ERROR = auto()
 
-    def __init__(self, mun_code, user=None, building=True, address=True):
+    def __init__(self, mun_code, user=None, split=None, building=True, address=True):
         super(Work, self).__init__()
         self.mun_code = mun_code
         self.user = user
+        self.split = split
         self.path = os.path.join(WORK_DIR, self.mun_code)
         self.options = argparse.Namespace(
             path = [mun_code],
@@ -41,8 +43,8 @@ class Work(Process):
             generate_config=False,
             manual=False,
             zoning=False,
-            list='',
-            split=None,
+            list="",
+            split=self.split,
             parcel=[],
             log_level='INFO',
         )
@@ -51,6 +53,8 @@ class Work(Process):
         if building and not address:
             self.options.args += "-b "
         self.options.args += mun_code
+        if self.split:
+            self.options.args += f"-s {self.split}"
         self.osm_id, self.name = boundary.get_municipality(mun_code)
 
     def _path(self, *args):
@@ -58,6 +62,17 @@ class Work(Process):
 
     def _path_exists(self, *args):
         return os.path.exists(self._path(*args))
+
+    def _path_create(self, *args):
+        if not self._path_exists(*args):
+            os.mkdir(self._path(*args))
+
+    def _path_remove(self, *args):
+        if self._path_exists(*args):
+            if os.path.isdir(self._path(*args)):
+                shutil.rmtree(self._path(*args))
+            else:
+                os.remove(self._path(*args))
 
     def _get_file(self, filename, from_row=0):
         fn = self._path(filename)
@@ -73,8 +88,9 @@ class Work(Process):
 
     def run(self):
         mun_code = self.mun_code
-        if not self._path_exists(self._path()):
-            os.mkdir(self._path())
+        self._path_create()
+        self._path_remove("catatom2osm.log")
+        self._path_remove("report.txt")
         log = cat_config.setup_logger(log_path=self._path())
         log.setLevel(logging.INFO)
         log.app_level = logging.INFO
@@ -105,6 +121,9 @@ class Work(Process):
                 if len(review) > 0:
                     return Work.Status.FIXME
                 if self._path_exists("tasks"):
+                    if not self.split is None:
+                        if not self._path.exists("tasks", self.split):
+                            return Work.Status.AVAILABLE
                     return Work.Status.DONE
             return Work.Status.RUNNING
         else:

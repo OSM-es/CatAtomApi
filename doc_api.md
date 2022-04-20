@@ -82,7 +82,8 @@ Sin parámetros
   - message: Tiempo de respuesta agotado del servidor Overpass
 
 ## Procesar
-* url: /job/`mun code`
+* url: /job/`mun code`           Código de municipio (5 dígitos).
+       /job/`mun code`/`split`   Identificador OSM del límite administrativo de un distrito o barrio
 
 ### GET
 Consulta el estado de un proceso.
@@ -110,7 +111,6 @@ Crea un proceso.
 #### Petición
 * building: boolean (por defecto true). Procesa edificios
 * address: boolean (por defecto true). Procesa direcciones
-* split: texto (por defecto none). Procesa una fracción de un municipio. Identificador (id) o nombre (name) del límite administrativo en OSM.
 
 #### Respuesta
 * 200 Success
@@ -136,7 +136,6 @@ Sobreescribe un proceso.
 #### Petición
 * building: boolean (por defecto true). Procesa edificios
 * address: boolean (por defecto true). Procesa direcciones
-* split: texto (por defecto none). Procesa una fracción de un municipio. Identificador (id) o nombre (name) del límite administrativo en OSM.
 
 #### Respuesta
 * 200 Success

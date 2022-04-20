@@ -19,22 +19,22 @@ api = Api(app)
 
 status_msg = {
     Work.Status.RUNNING: (
-        409, "El municipio '{}' está siendo procesado"
+        409, "Procesando..."
     ),
     Work.Status.REVIEW: (
-        405, "El municipio '{}' está pendiente de revisar direcciones"
+        405, "Pendiente de revisar direcciones"
     ),
     Work.Status.FIXME: (
-        405, "El municipio '{}' está pendiente de revisar problemas"
+        405, "Pendiente de revisar problemas"
     ),
     Work.Status.DONE: (
-        405, "El municipio '{}' ya está procesado"
+        405, "Proceso finalizado"
     ),
     Work.Status.AVAILABLE: (
-        200, "El municipio '{}' no está procesado"
+        200, "No procesado"
     ),
     Work.Status.ERROR: (
-        200, "El municipio '{}' terminó con error"
+        200, "Terminó con error"
     ),
 }
 
@@ -112,15 +112,16 @@ class Job(Resource):
         self.post_parser.add_argument('building', type=bool, default=True)
         self.post_parser.add_argument('address', type=bool, default=True)
 
-    def get(self, mun_code):
+    def get(self, mun_code, split=None):
         """Estado del proceso de un municipio."""
         linea = int(request.args.get("linea", 0))
+        app.logger.info(split)
         try:
-            job = Work(mun_code)
+            job = Work(mun_code, split=split)
         except CatValueError as e:
             abort(404, message=str(e))
         status = job.status()
-        msg = status_msg[status][1].format(mun_code)
+        msg = status_msg[status][1]
         log = ""
         if status != Work.Status.AVAILABLE: 
             log, linea = job.log(linea)
@@ -135,15 +136,14 @@ class Job(Resource):
         }
     
     @user.auth.login_required
-    def post(self, mun_code):
-        # TODO: recoger parámetro split
-        # TODO: Eliminar barras de progreso
+    def post(self, mun_code, split=None):
         """Procesa un municipio."""
+        app.logger.info(split)
         args = self.post_parser.parse_args()
         token = request.headers.get("Authorization", "")[6:]
         user_data = user.verify_token(token)
         try:
-            job = Work(mun_code, user_data, **args)
+            job = Work(mun_code, user_data, split, **args)
         except CatValueError as e:
             abort(404, message=str(e))
         status = job.status()
@@ -168,7 +168,12 @@ api.add_resource(Authorize,'/authorize')
 api.add_resource(Provinces,'/prov')
 api.add_resource(Province,'/prov/<string:prov_code>')
 api.add_resource(Municipality,'/mun/<string:mun_code>')
-api.add_resource(Job,'/job/<string:mun_code>')
+api.add_resource(
+    Job,
+    '/job/<string:mun_code>',
+    '/job/<string:mun_code>/',
+    '/job/<string:mun_code>/<string:split>',
+)
 
 
 @app.route("/")
