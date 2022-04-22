@@ -1,15 +1,15 @@
+import logging
 import os
 
-from flask import Flask, redirect, request
+from flask import Flask, g, redirect, request
 from flask_restful import abort, Api, reqparse, Resource
 
 from catatom2osm import config as cat_config
 from catatom2osm import csvtools
 from catatom2osm.boundary import get_districts
-from catatom2osm.exceptions import CatValueError
 
 import user
-from work import Work
+from work import Work, check_owner
 
 
 WORK_DIR = os.environ['HOME']
@@ -28,13 +28,13 @@ status_msg = {
         405, "Pendiente de revisar problemas"
     ),
     Work.Status.DONE: (
-        405, "Proceso finalizado"
+        200, "Proceso finalizado"
     ),
     Work.Status.AVAILABLE: (
         200, "No procesado"
     ),
     Work.Status.ERROR: (
-        200, "Terminó con error"
+        502, "Terminó con error"
     ),
 }
 
@@ -42,9 +42,11 @@ status_msg = {
 class Login(Resource):
     def get(self):
         callback = request.args.get('callback')
-        app.logger.info(callback)
         return user.get_authorize_url(callback)
 
+    @user.auth.login_required
+    def put(self):
+        return {"ping": "ok"}
 
 class Authorize(Resource):
     def get(self):
@@ -89,10 +91,7 @@ class Province(Resource):
 class Municipality(Resource):
     def get(self, mun_code):
         """Devuelve lista de distritos/barrios"""
-        try:
-            job = Work(mun_code)
-        except CatValueError as e:
-            abort(404, message=str(e))
+        job = Work.validate(mun_code)
         divisiones = [
             {
                 "osm_id": district[1],
@@ -116,18 +115,17 @@ class Job(Resource):
     def get(self, mun_code, split=None):
         """Estado del proceso de un municipio."""
         linea = int(request.args.get("linea", 0))
-        app.logger.info(split)
-        try:
-            job = Work(mun_code, split=split)
-        except CatValueError as e:
-            abort(404, message=str(e))
+        job = Work.validate(mun_code, split=split)
         status = job.status()
         msg = status_msg[status][1]
         log = ""
         if status != Work.Status.AVAILABLE: 
             log, linea = job.log(linea)
         return {
-            "estado": str(status).split(".")[-1],
+            "cod_municipio": mun_code,
+            "cod_division": split or "",
+            "estado": status.name,
+            "propietario": Work.get_user(mun_code),
             "mensaje": msg,
             "linea": linea,
             "log": log,
@@ -137,16 +135,11 @@ class Job(Resource):
         }
     
     @user.auth.login_required
+    @check_owner
     def post(self, mun_code, split=None):
         """Procesa un municipio."""
-        app.logger.info(split)
         args = self.post_parser.parse_args()
-        token = request.headers.get("Authorization", "")[6:]
-        user_data = user.verify_token(token)
-        try:
-            job = Work(mun_code, user_data, split, **args)
-        except CatValueError as e:
-            abort(404, message=str(e))
+        job = Work.validate(mun_code, split, **args)
         status = job.status()
         if status not in [Work.Status.AVAILABLE, Work.Status.ERROR]:
             msg = status_msg[status][1].format(mun_code)
@@ -156,13 +149,34 @@ class Job(Resource):
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
-        return {"mensaje": _("Start processing '%s'") % mun_code}
+        return {
+            "cod_municipio": mun_code,
+            "cod_division": split or "",
+            "mensaje": "Procesando...",
+        }
 
 
-    # TODO: put igual que post pero sin comprobar si existe
+    @user.auth.login_required
+    @check_owner
+    def delete(self, mun_code, split=None):
+        """Eliminar proceso."""
+        __ = request.data  # https://github.com/pallets/flask/issues/4546
+        job = Work.validate(mun_code, split)
+        if not job.delete():
+            abort(410, message="No se pudo eliminar")
+        return {
+            "cod_municipio": mun_code,
+            "cod_division": split or "",
+            "propietario": None,
+            "estado": Work.Status.AVAILABLE.name,
+            "mensaje": "Eliminado",
+            "linea": 0,
+            "log": "",
+            "informe": [],
+            "report": [],
+            "revisar": [],
+        }
     
-    # TODO: delete comprobar estado y borrar directorio si está terminado
-
 
 api.add_resource(Login,'/login')
 api.add_resource(Authorize,'/authorize')
@@ -176,8 +190,13 @@ api.add_resource(
     '/job/<string:mun_code>/<string:split>',
 )
 
-
 @app.route("/")
 def hello_world():
-   return f"{cat_config.app_name} {cat_config.app_version} API"
+    return f"{cat_config.app_name} {cat_config.app_version} API"
+
+
+if __name__ != '__main__':
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
 

@@ -6,14 +6,31 @@ import os
 import shutil
 import subprocess
 from enum import Enum, auto
+from functools import wraps
 from multiprocessing import Process
+
+from flask import g
+from flask_restful import abort
 
 from catatom2osm import boundary
 from catatom2osm import config as cat_config
 from catatom2osm.app import CatAtom2Osm, QgsSingleton
+from catatom2osm.exceptions import CatValueError
 
 
 WORK_DIR = os.environ['HOME']
+
+
+def check_owner(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        mun_code = kwargs.get("mun_code", "")
+        user = Work.get_user(mun_code)
+        if user and user["osm_id"] != g.user_data["osm_id"]:
+            msg = f"Proceso bloqueado por {user['username']} ({user['osm_id']})"
+            abort(409, message=msg)
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 class Work(Process):
@@ -66,6 +83,24 @@ class Work(Process):
             self.options.args += f"-s {self.split}"
         self.osm_id, self.name = boundary.get_municipality(mun_code)
 
+    @staticmethod
+    def get_user(mun_code):
+        fn = os.path.join(WORK_DIR, mun_code)
+        if os.path.exists(fn):
+            fn = os.path.join(fn, "user.json")
+            if os.path.exists(fn):
+                with open(fn, "r") as fo:
+                    return json.load(fo)
+
+    @staticmethod
+    def validate(mun_code, split=None, **kwargs):
+        user = getattr(g, "user_data", "")
+        try:
+            job = Work(mun_code, user, split, **kwargs)
+        except CatValueError as e:
+            abort(404, message=str(e))
+        return job
+
     def _path(self, *args):
         return os.path.join(self.path, *args)
 
@@ -82,6 +117,8 @@ class Work(Process):
                 shutil.rmtree(self._path(*args))
             else:
                 os.remove(self._path(*args))
+            return True
+        return False
 
     def _get_file(self, filename, from_row=0):
         fn = self._path(filename)
@@ -100,10 +137,12 @@ class Work(Process):
         self._path_create()
         self._path_remove("catatom2osm.log")
         self._path_remove("report.txt")
+        gunicorn_logger = logging.getLogger('gunicorn.error')
         log = cat_config.setup_logger(log_path=self._path())
-        log.setLevel(logging.INFO)
-        log.app_level = logging.INFO
-        cat_config.set_config(dict(language=self.idioma))
+        log.handlers += gunicorn_logger.handlers
+        log.setLevel(gunicorn_logger.level)
+        log.app_level = gunicorn_logger.level
+        cat_config.set_config(dict(language=self.idioma, show_progress_bars=False))
         with open(self._path("user.json"), "w") as fo:
             fo.write(json.dumps(self.user))
         try:
@@ -119,7 +158,7 @@ class Work(Process):
 
     def status(self):
         review = self.review()
-        if self._path_exists():
+        if self._path_exists() and self._path_exists("user.json"):
             if self._path_exists("catatom2osm.log"):
                 with open(self._path("catatom2osm.log"), "r") as fo:
                     log = fo.read()
@@ -160,3 +199,8 @@ class Work(Process):
             return output.split("\n")
         return []
 
+    def delete(self):
+        if self.split:
+            return self._path_remove("tasks", self.split)
+        return self._path_remove()
+                

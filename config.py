@@ -10,7 +10,6 @@ load_dotenv("api.env")
 # API_URL = "https://cat.cartobase.es/api"
 # OSM_CLIENT_ID = "Registra la aplicación en https://osm.org/user/Javier Sanchez/oauth_clients"
 # OSM_CLIENT_SECRET = 
-# Ca2O_SHOW_PROGRESS_BARS = False
     
 SECRET_KEY = os.getenv("FLASK_SECRET_KEY", None)
 if "API_URL" in os.environ:

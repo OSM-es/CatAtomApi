@@ -43,5 +43,5 @@ down:  ## Stop service
 
 .PHONY: debug
 debug:  ## Run docker container in debug mode
-	@docker-compose run --rm -p 5001:5001 -e FLASK_ENV=development -e FLASK_PORT=5001 -v $(PWD):/opt/CatAtomAPI web
+	@docker-compose run --rm -p 5001:5001 -e FLASK_ENV=development -e FLASK_PORT=5001 -e RELOAD="--reload" -v $(PWD):/opt/CatAtomAPI web
 

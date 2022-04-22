@@ -2,7 +2,7 @@ import requests
 from xml.etree import ElementTree as ET 
 
 from authlib.integrations.flask_client import OAuth
-from flask import current_app, request, session, url_for
+from flask import current_app, g, request, session, url_for
 from flask_httpauth import HTTPTokenAuth
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 
@@ -22,10 +22,10 @@ osm = oauth.register('osm',
 def verify_token(token):
     serializer = URLSafeTimedSerializer(current_app.secret_key)
     try:
-        user_data = serializer.loads(token, max_age=86400)
+        g.user_data = serializer.loads(token, max_age=864000)
     except (SignatureExpired, BadSignature):
         return False
-    return user_data
+    return g.user_data
 
 def get_authorize_url(callback_url = None):
     api_url = current_app.config.get("API_URL", request.host_url)
@@ -34,7 +34,6 @@ def get_authorize_url(callback_url = None):
 
 def authorize():
     token = osm.authorize_access_token()
-    current_app.logger.info(token)
     if token is None:
         return None
     session["osm_oauth"] = token

@@ -93,6 +93,9 @@ Consulta el estado de un proceso.
 
 #### Respuesta
 * 200 Success
+  - cod_municipio: Código de municipio (5 dígitos).
+  - cod_division: Identificador OSM del límite administrativo de un distrito o barrio
+  - propietario: {osm_id, username} Usuario que ha iniciado el proceso
   - estado: "AVAILABLE", "RUNNING", "REVIEW", "FIXME, "DONE"
   - mensaje: Mensaje de estado extendido 
   - usuario: Usuario que lanzó el proceso.
@@ -115,47 +118,18 @@ Crea un proceso.
 
 #### Respuesta
 * 200 Success
-  - message: Se inicia el proceso de '`mun code:99999`', Se reanuda el proceso de '`mun code:9999`'
-* 400 Bad Request
-  - message: El Código Provincial '`prov code:99`' no es válido
+  - cod_municipio: Código de municipio (5 dígitos).
+  - cod_division: Identificador OSM del límite administrativo de un distrito o barrio
+  - propietario: {osm_id, username} Usuario que ha iniciado el proceso
+  - mensaje: Procesando...
 * 401 Unauthorized
   - message: Se requiere autenticación
 * 404 Not Found
   - message: El código de municipio '`mun code:99999`' no existe
 * 405 Method Not Allowed
-  - message: El municipio '`mun code:99999`' está pendiente de revisar
+  - message: Pendiente de revisar direcciones / problemas
 * 409 Conflict
-  - message: El municipio '`mun code:99999`' está siendo procesado por `user`
-* 502 Bad Gateway
-  - message: No se puede acceder al servidor Overpass
-* 504 Gateway Timeout
-  - message: Tiempo de respuesta agotado del servidor Overpass
-
-### PUT
-Sobreescribe un proceso.
-
-#### Petición
-* building: boolean (por defecto true). Procesa edificios
-* address: boolean (por defecto true). Procesa direcciones
-* idioma: es_ES / ca_ES / gl_ES
-
-#### Respuesta
-* 200 Success
-  - message: Se reinicia el proceso de 'mun code:9999>
-* 400 Bad Request
-  - message: El Código Provincial '`prov code:99`' no es válido
-* 401 Unauthorized
-  - message: Se requiere autenticación
-* 403 Forbidden
-  - message: El proceso del municipio '`mun code:99999`' corresponde a `user`
-* 404 Not Found
-  - message: El código de municipio '`mun code:99999`' no existe
-* 409 Conflict
-  - message: El municipio '`mun code:99999`' está siendo procesado por `user`
-* 502 Bad Gateway
-  - message: No se puede acceder al servidor Overpass
-* 504 Gateway Timeout
-  - message: Tiempo de respuesta agotado del servidor Overpass
+  - message: Proceso bloqueado por `user`
 
 ### DELETE
 Elimina un proceso.
@@ -165,14 +139,15 @@ Sin parámetros.
 
 #### Respuesta
 * 200 Success
-  - message: Se ha eliminado el municipio '`mun code:99999`'
-* 400 Bad Request
-  - message: El Código Provincial '`prov code:99`' no es válido
+  - cod_municipio: Código de municipio (5 dígitos).
+  - cod_division: Identificador OSM del límite administrativo de un distrito o barrio
+  - propietario: {osm_id, username} Usuario que ha iniciado el proceso
+  - mensaje: Proceso desbloqueado
 * 401 Unauthorized
   - message: Se requiere autenticación
-* 403 Forbidden
-  - message: El proceso del municipio '`mun code:99999`' corresponde a `user`
 * 404 Not Found
   - message: El código de municipio '`mun code:99999`' no existe
 * 409 Conflict
-  - message: El municipio '`mun code:99999`' está siendo procesado por `user`
+  - message: Proceso bloqueado por `user`
+* 410 Gone
+  - message: No se pudo eliminar

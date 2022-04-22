@@ -19,3 +19,5 @@ Para otros usos ver el Makefile
 ## Documentación
 Ver [doc_api.md](doc_api.md)
 
+## Producción
+Crear api.env siguiendo instrucciones de config.py
