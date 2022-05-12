@@ -2,10 +2,10 @@ ARG FLASK_ENV=production
 ARG FLASK_APP=api.py
 ARG FLASK_PORT=5000
 ARG RELOAD=""
-ARG user=catastro
-ARG group=catastro
+ARG user=www-data
+ARG group=www-data
 
-FROM catatom2osm AS base
+FROM catatom2osm4api AS base
 
 LABEL maintainer="javiersanp@gmail.com"
 
@@ -30,17 +30,16 @@ ONBUILD RUN echo "Skip copy"
 FROM ${FLASK_ENV}_stage AS final
 ARG user
 ARG group
-ARG home
 ARG FLASK_PORT
 ARG FLASK_APP
 ARG RELOAD
+ARG HOME=/catastro
 ENV FLASK_APP=$FLASK_APP
 ENV FLASK_PORT=$FLASK_PORT
 ENV RELOAD=$RELOAD
+ENV HOME=$HOME
 
-RUN chown -R $user:$group $APP_PATH && \
-    chown -R www-data:www-data /catastro && \
-    usermod -a -G www-data $user
+RUN chown -R $user:$group $APP_PATH
 
 EXPOSE $FLASK_PORT
 

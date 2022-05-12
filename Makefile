@@ -26,7 +26,7 @@ submodules: catatom2osm  ## Update submodules
 
 .PHONY: build
 build: submodules  ## Build docker image
-	@make -C catatom2osm build
+	@docker build --build-arg user=www-data --build-arg group=www-data --build-arg uid=$(id -u www-data) --build-arg gid=$(id -g www-data) -t catatom2osm4api catatom2osm
 	@docker-compose build
 	
 .PHONY: up
