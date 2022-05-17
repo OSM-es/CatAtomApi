@@ -1,0 +1,5 @@
+show_progress_bars: false
+osm3s_servers:
+- http://osm3s.cartobase.es/api/interpreter?
+- http://overpass-api.de/api/interpreter?
+

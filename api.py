@@ -5,6 +5,8 @@ from flask import Flask, g, redirect, request
 from flask_restful import abort, Api, reqparse, Resource
 
 from catatom2osm import config as cat_config
+cat_config.get_user_config('catconfig.yaml')
+
 from catatom2osm import csvtools
 from catatom2osm.boundary import get_districts
 

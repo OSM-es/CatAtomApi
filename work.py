@@ -142,7 +142,7 @@ class Work(Process):
         log.handlers += gunicorn_logger.handlers
         log.setLevel(gunicorn_logger.level)
         log.app_level = gunicorn_logger.level
-        cat_config.set_config(dict(language=self.idioma, show_progress_bars=False))
+        cat_config.set_config(dict(language=self.idioma))
         with open(self._path("user.json"), "w") as fo:
             fo.write(json.dumps(self.user))
         try:
