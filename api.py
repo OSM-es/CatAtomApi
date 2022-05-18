@@ -143,7 +143,7 @@ class Job(Resource):
         args = self.post_parser.parse_args()
         job = Work.validate(mun_code, split, **args)
         status = job.status()
-        if status not in [Work.Status.AVAILABLE, Work.Status.ERROR]:
+        if status not in [Work.Status.AVAILABLE, Work.Status.ERROR, Work.Status.REVIEW]:
             msg = status_msg[status][1].format(mun_code)
             abort(status_msg[status][0], message=msg)
         try:
