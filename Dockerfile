@@ -45,5 +45,4 @@ EXPOSE $FLASK_PORT
 
 USER $user
 
-CMD gunicorn --bind 0.0.0.0:$FLASK_PORT --workers 4 api:app $RELOAD
-
+CMD gunicorn --bind 0.0.0.0:$FLASK_PORT --workers 4 --timeout 300 api:app $RELOAD

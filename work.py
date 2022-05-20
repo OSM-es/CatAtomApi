@@ -1,5 +1,6 @@
 import argparse
 import glob
+import gzip
 import json
 import logging
 import os
@@ -157,7 +158,7 @@ class Work(Process):
             os.remove(fp)
 
     def status(self):
-        review = self.review()
+        review = self.review(status=True)
         if self._path_exists() and self._path_exists("user.json"):
             if self._path_exists("catatom2osm.log"):
                 with open(self._path("catatom2osm.log"), "r") as fo:
@@ -180,27 +181,33 @@ class Work(Process):
 
     def log(self, from_row=0):
         return self._get_file("catatom2osm.log", from_row)
-    
+
     def report(self):
         return self._get_file("report.txt")[0]
 
     def report_json(self):
         if self._path_exists("report.json"):
             with open(self._path("report.json"), "r") as fo:
-                return json.loads(fo.read())
+                report = json.loads(fo.read())
+            report.pop("min_level", None)
+            report.pop("max_level", None)
+            return report
         return {}
 
-    def review(self):
-        review = subprocess.run(
-            ["bin/review.sh", self.mun_code], capture_output=True, text=True
-        )
-        output = review.stdout.strip("\n")
-        if output:
-            return output.split("\n")
-        return []
+    def review(self, status=False):
+        review = []
+        if self._path_exists("tasks"):
+            for fn in os.listdir(self._path("tasks")):
+                if fn.endswith(".osm.gz"):
+                    with gzip.open(self._path("tasks", fn)) as fo:
+                        if b"fixme" in fo.read():
+                            review.append(fn)
+                            if status:
+                                break
+        return review
 
     def delete(self):
         if self.split:
             return self._path_remove("tasks", self.split)
         return self._path_remove()
-                
+

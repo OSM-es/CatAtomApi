@@ -123,7 +123,7 @@ class Job(Resource):
         log = ""
         if status != Work.Status.AVAILABLE: 
             log, linea = job.log(linea)
-        return {
+        data = {
             "cod_municipio": mun_code,
             "cod_division": split or "",
             "estado": status.name,
@@ -131,10 +131,16 @@ class Job(Resource):
             "mensaje": msg,
             "linea": linea,
             "log": log,
-            "informe": job.report(),
-            "report": job.report_json(),
-            "revisar": job.review(),
+            "informe": [],
+            "report": {},
+            "revisar": [],
         }
+        if status != Work.Status.AVAILABLE and status != Work.Status.RUNNING: 
+            data["informe"] = job.report()
+            data["report"] = job.report_json()
+        if status == Work.Status.FIXME:
+            data["revisar"] = job.review()
+        return data
     
     @user.auth.login_required
     @check_owner
