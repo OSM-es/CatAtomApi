@@ -1,7 +1,7 @@
 import requests
 from xml.etree import ElementTree as ET 
 
-from authlib.integrations.flask_client import OAuth
+from authlib.integrations.flask_client import OAuth, OAuthError
 from flask import current_app, g, request, session, url_for
 from flask_httpauth import HTTPTokenAuth
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
@@ -33,7 +33,10 @@ def get_authorize_url(callback_url = None):
     return osm.authorize_redirect(callback)
 
 def authorize():
-    token = osm.authorize_access_token()
+    try:
+        token = osm.authorize_access_token()
+    except OAuthError:
+        return None
     if token is None:
         return None
     session["osm_oauth"] = token

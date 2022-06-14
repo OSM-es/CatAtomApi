@@ -2,6 +2,7 @@ import logging
 import os
 
 from flask import Flask, g, redirect, request
+from flask_cors import CORS
 from flask_restful import abort, Api, reqparse, Resource
 
 from catatom2osm import config as cat_config
@@ -16,6 +17,7 @@ from work import Work, check_owner
 
 WORK_DIR = os.environ['HOME']
 app = Flask(__name__, instance_relative_config=True)
+cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://192.168.0.*:8080"]}}, supports_credentials=True)
 app.config.from_object('config')
 api = Api(app)
 
@@ -158,6 +160,7 @@ class Job(Resource):
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
         return {
+            "estado": Work.Status.RUNNING.name,
             "cod_municipio": mun_code,
             "cod_division": split or "",
             "mensaje": "Procesando...",
