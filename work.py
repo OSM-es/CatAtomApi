@@ -10,8 +10,10 @@ from enum import Enum, auto
 from functools import wraps
 from multiprocessing import Process
 
+from tempfile import mkstemp
 from flask import g
 from flask_restful import abort
+from werkzeug.utils import secure_filename
 
 from catatom2osm import boundary
 from catatom2osm import config as cat_config
@@ -133,6 +135,25 @@ class Work(Process):
                     i += 1
         return rows, i
 
+    def save_file(self, file):
+        filename = secure_filename(file.filename)
+        if filename.endswith(".gz"):
+            filename = self._path("tasks", filename)
+        else:
+            return "notfound"
+        if os.path.exists(filename):
+            tmpfo, tmpfn = mkstemp();
+            file.save(tmpfn)
+            try:
+                with gzip.open(tmpfn) as fo:
+                    fo.read()
+            except gzip.BadGzipFile:
+                return "notvalid"
+            shutil.copyfile(tmpfn, filename)
+            os.remove(tmpfn)
+            return "ok"
+        return "notfound"
+
     def run(self):
         mun_code = self.mun_code
         self._path_create()
@@ -204,10 +225,9 @@ class Work(Process):
                             review.append(fn)
                             if status:
                                 break
-        return review
+        return sorted(review)
 
     def delete(self):
         if self.split:
             return self._path_remove("tasks", self.split)
         return self._path_remove()
-

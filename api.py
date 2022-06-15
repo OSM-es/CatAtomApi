@@ -71,7 +71,7 @@ class Provinces(Resource):
             "provincias": provinces,
         }
         return data
-  
+
 
 class Province(Resource):
     def get(self, prov_code):
@@ -143,7 +143,7 @@ class Job(Resource):
         if status == Work.Status.FIXME:
             data["revisar"] = job.review()
         return data
-    
+
     @user.auth.login_required
     @check_owner
     def post(self, mun_code, split=None):
@@ -166,6 +166,19 @@ class Job(Resource):
             "mensaje": "Procesando...",
         }
 
+    @user.auth.login_required
+    @check_owner
+    def put(self, mun_code, split=None):
+        job = Work.validate(mun_code, split=split)
+        file = request.files["file"]
+        try:
+            status = job.save_file(file)
+        except Exception as e:
+            abort(500, message=str(e))
+        if status == "notfound":
+            abort(400, message="Sólo archivos de tareas existentes")
+        if status == "notvalid":
+            abort(400, message="No es un archivo gzip válido")
 
     @user.auth.login_required
     @check_owner
@@ -187,7 +200,7 @@ class Job(Resource):
             "report": [],
             "revisar": [],
         }
-    
+
 
 api.add_resource(Login,'/login')
 api.add_resource(Authorize,'/authorize')
