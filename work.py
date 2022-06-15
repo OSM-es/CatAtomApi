@@ -189,7 +189,7 @@ class Work(Process):
                     return Work.Status.FIXME
                 if self._path_exists("tasks"):
                     if not self.split is None:
-                        if not self._path.exists("tasks", self.split):
+                        if not self._path_exists("tasks", self.split):
                             return Work.Status.AVAILABLE
                     return Work.Status.DONE
             return Work.Status.RUNNING
