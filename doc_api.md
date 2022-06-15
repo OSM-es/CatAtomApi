@@ -131,6 +131,18 @@ Crea un proceso.
 * 409 Conflict
   - message: Proceso bloqueado por `user`
 
+### PUT
+Actualiza los archivos de tareas de un proceso.
+
+#### Petición
+* files["file"]: archivo a subir
+
+#### Respuesta
+* 200 Success
+* 400 Bad request
+  - message: Sólo archivos de tareas existentes
+             No es un archivo gzip válido
+
 ### DELETE
 Elimina un proceso.
 

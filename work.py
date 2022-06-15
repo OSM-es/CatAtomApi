@@ -137,11 +137,7 @@ class Work(Process):
 
     def save_file(self, file):
         filename = secure_filename(file.filename)
-        if filename.endswith(".gz"):
-            filename = self._path("tasks", filename)
-        else:
-            return "notfound"
-        if os.path.exists(filename):
+        if filename.endswith(".gz") and os.path.exists(filename):
             tmpfo, tmpfn = mkstemp();
             file.save(tmpfn)
             try:
@@ -202,6 +198,9 @@ class Work(Process):
 
     def log(self, from_row=0):
         return self._get_file("catatom2osm.log", from_row)
+
+    def highway_names(self):
+        return [row.split("\t") for row in self._get_file("highway_names.csv")[0]]
 
     def report(self):
         return self._get_file("report.txt")[0]

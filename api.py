@@ -140,6 +140,10 @@ class Job(Resource):
         if status != Work.Status.AVAILABLE and status != Work.Status.RUNNING: 
             data["informe"] = job.report()
             data["report"] = job.report_json()
+            if "split_id" in data["report"]:
+                data["cod_division"] = data["report"]["split_id"]
+        if status == Work.Status.REVIEW:
+            data["callejero"] = job.highway_names()
         if status == Work.Status.FIXME:
             data["revisar"] = job.review()
         return data
