@@ -18,6 +18,7 @@ from werkzeug.utils import secure_filename
 from catatom2osm import boundary
 from catatom2osm import config as cat_config
 from catatom2osm.app import CatAtom2Osm, QgsSingleton
+from catatom2osm.csvtools import csv2dict, dict2csv
 from catatom2osm.exceptions import CatValueError
 
 
@@ -198,6 +199,17 @@ class Work(Process):
 
     def log(self, from_row=0):
         return self._get_file("catatom2osm.log", from_row)
+
+    def update_highway_name(self, cat, conv):
+        data = []
+        if self._path_exists("highway_names.csv"):
+            fn = self._path("highway_names.csv")
+            hgwnames = csv2dict(fn)
+            if cat in hgwnames:
+                hgwnames[cat] = conv
+                dict2csv(fn, hgwnames)
+                data = list(hgwnames.items())
+        return data
 
     def highway_names(self):
         return [row.split("\t") for row in self._get_file("highway_names.csv")[0]]

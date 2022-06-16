@@ -17,8 +17,8 @@ from work import Work, check_owner
 
 WORK_DIR = os.environ['HOME']
 app = Flask(__name__, instance_relative_config=True)
-cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:8080", "http://192.168.0.*:8080"]}}, supports_credentials=True)
 app.config.from_object('config')
+cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:8080"]}}, supports_credentials=True)
 api = Api(app)
 
 status_msg = {
@@ -205,6 +205,21 @@ class Job(Resource):
             "revisar": [],
         }
 
+class Highway(Resource):
+    def put(self, mun_code):
+        """Edita una entrada del callejero"""
+        print("highway")
+        job = Work.validate(mun_code)
+        print(request.form);
+        cat = request.form["cat"]
+        conv = request.form["conv"]
+        data = {}
+        try:
+            data = job.update_highway_name(cat, conv)
+        except OSError as e:
+            abort(501, message=str(e))
+        return data
+
 
 api.add_resource(Login,'/login')
 api.add_resource(Authorize,'/authorize')
@@ -217,6 +232,7 @@ api.add_resource(
     '/job/<string:mun_code>/',
     '/job/<string:mun_code>/<string:split>',
 )
+api.add_resource(Highway,'/hgw/<string:mun_code>')
 
 @app.route("/")
 def hello_world():
