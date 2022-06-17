@@ -122,7 +122,7 @@ class Job(Resource):
         job = Work.validate(mun_code, split=split)
         status = job.status()
         msg = status_msg[status][1]
-        log = ""
+        log = []
         if status != Work.Status.AVAILABLE: 
             log, linea = job.log(linea)
         data = {
