@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import subprocess
+import time
 from enum import Enum, auto
 from functools import wraps
 from multiprocessing import Process
@@ -55,12 +56,16 @@ class Work(Process):
         building=True,
         address=True,
         idioma="es_ES",
+        socketio=None,
     ):
         super(Work, self).__init__()
         self.mun_code = mun_code
         self.user = user
         self.split = split
         self.idioma = idioma
+        self.socketio = socketio
+        if socketio:
+            self.socketio.send("init")
         self.path = os.path.join(WORK_DIR, self.mun_code)
         self.options = argparse.Namespace(
             path = [mun_code],
@@ -151,16 +156,31 @@ class Work(Process):
             return "ok"
         return "notfound"
 
+    def watchLog(self):
+        while self.status() != Work.Status.RUNNING:
+            pass
+        lines = 0
+        while self.status() == Work.Status.RUNNING:
+            log, lines = self.log(lines)
+            if len(log) > 0:
+                msg = f"log {lines}"
+                self.socketio.emit("updateJob", msg, to=self.mun_code)
+            self.socketio.sleep(0.5)
+        log, lines = self.log(lines)
+        if len(log) > 0:
+            msg = f"log {lines}"
+            self.socketio.emit("updateJob", msg, to=self.mun_code)
+
     def run(self):
         mun_code = self.mun_code
         self._path_create()
         self._path_remove("catatom2osm.log")
         self._path_remove("report.txt")
-        gunicorn_logger = logging.getLogger('gunicorn.error')
+        socketio_logger = logging.getLogger("socketio.server")
         log = cat_config.setup_logger(log_path=self._path())
-        log.handlers += gunicorn_logger.handlers
-        log.setLevel(gunicorn_logger.level)
-        log.app_level = gunicorn_logger.level
+        log.handlers += socketio_logger.handlers
+        log.setLevel(logging.INFO)
+        log.app_level = logging.INFO
         cat_config.set_config(dict(language=self.idioma))
         with open(self._path("user.json"), "w") as fo:
             fo.write(json.dumps(self.user))
@@ -242,3 +262,4 @@ class Work(Process):
         if self.split:
             return self._path_remove("tasks", self.split)
         return self._path_remove()
+

@@ -4,6 +4,7 @@ import os
 from flask import Flask, g, redirect, request
 from flask_cors import CORS
 from flask_restful import abort, Api, reqparse, Resource
+from flask_socketio import SocketIO, join_room, leave_room
 
 from catatom2osm import config as cat_config
 cat_config.get_user_config('catconfig.yaml')
@@ -19,6 +20,7 @@ WORK_DIR = os.environ['HOME']
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_object('config')
 cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:8080"]}}, supports_credentials=True)
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:8080", logger=True)
 api = Api(app)
 
 status_msg = {
@@ -108,7 +110,6 @@ class Municipality(Resource):
             "divisiones": divisiones,
         }
 
-
 class Job(Resource):
     def __init__(self):
         self.post_parser = reqparse.RequestParser()
@@ -153,13 +154,17 @@ class Job(Resource):
     def post(self, mun_code, split=None):
         """Procesa un municipio."""
         args = self.post_parser.parse_args()
-        job = Work.validate(mun_code, split, **args)
+        job = Work.validate(mun_code, split, **args, socketio=socketio)
         status = job.status()
+        socketio.send(status.name)
         if status not in [Work.Status.AVAILABLE, Work.Status.ERROR, Work.Status.REVIEW]:
             msg = status_msg[status][1].format(mun_code)
             abort(status_msg[status][0], message=msg)
         try:
             job.start()
+            msg = f"{g.user_data['username']} inicia el proceso de {mun_code}"
+            socketio.send(msg, to=mun_code)
+            socketio.start_background_task(job.watchLog)
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
@@ -239,8 +244,43 @@ def hello_world():
     return f"{cat_config.app_name} {cat_config.app_version} API"
 
 
-if __name__ != '__main__':
-    gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
+@socketio.on("connect")
+def handle_connect():
+    print('a user connected')
 
+@socketio.on("disconnect")
+def handle_disconnect(data=None):
+    print('a user disconnected', data)
+
+@socketio.on("my message")
+def handle_custom_message(data):
+    print('mensaje: ', data)
+    socketio.emit("my broadcast", f"server: {data}", broadcast=True)
+
+@socketio.on("message")
+def handle_message(data):
+    print('received message: ' + data)
+
+@socketio.on('my event')
+def handle_my_custom_event(json):
+    print('received json: ' + str(json) + str(json["abc"]))
+
+@socketio.on("join")
+def on_join(data):
+    room = data["room"]
+    username = data["username"]
+    join_room(room)
+    socketio.send(username + ' ha entrado en ' + room, to=room)
+    return len(socketio.server.manager.rooms["/"][room])
+
+@socketio.on('leave')
+def on_leave(data):
+    username = data["username"]
+    room = data["room"]
+    leave_room(room)
+    socketio.send(username + ' has left the room.', to=room)
+
+
+if __name__ == '__main__':
+    flask_port = os.environ["FLASK_PORT"]
+    socketio.run(app, "0.0.0.0", flask_port)
