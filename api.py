@@ -163,7 +163,7 @@ class Job(Resource):
         try:
             job.start()
             msg = f"{g.user_data['username']} inicia el proceso de {mun_code}"
-            socketio.send(msg, to=mun_code)
+            socketio.emit("chat", msg, to=mun_code)
             socketio.start_background_task(job.watchLog)
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
@@ -258,27 +258,32 @@ def handle_custom_message(data):
     socketio.emit("my broadcast", f"server: {data}", broadcast=True)
 
 @socketio.on("message")
-def handle_message(data):
-    print('received message: ' + data)
+def handle_message(msg):
+    print(f"message: {msg}")
 
 @socketio.on('my event')
 def handle_my_custom_event(json):
     print('received json: ' + str(json) + str(json["abc"]))
 
+@socketio.on("chat")
+def handle_send(data):
+    socketio.emit("chat", data, to=data["room"])
+
 @socketio.on("join")
 def on_join(data):
     room = data["room"]
-    username = data["username"]
     join_room(room)
-    socketio.send(username + ' ha entrado en ' + room, to=room)
-    return len(socketio.server.manager.rooms["/"][room])
+    data["participants"] = len(socketio.server.manager.rooms["/"][room])
+    socketio.emit("join", data, to=room)
+    return data
 
 @socketio.on('leave')
 def on_leave(data):
-    username = data["username"]
     room = data["room"]
     leave_room(room)
-    socketio.send(username + ' has left the room.', to=room)
+    data["participants"] = len(socketio.server.manager.rooms["/"][room])
+    socketio.emit("leave", data, to=room)
+    return data
 
 
 if __name__ == '__main__':
