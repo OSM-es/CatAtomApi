@@ -20,7 +20,7 @@ WORK_DIR = os.environ['HOME']
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_object('config')
 cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:8080"]}}, supports_credentials=True)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:8080", logger=True)
+socketio = SocketIO(app, cors_allowed_origins="http://localhost:8080")
 api = Api(app)
 
 status_msg = {
@@ -247,6 +247,10 @@ def hello_world():
 @socketio.on("chat")
 def handle_send(data):
     socketio.emit("chat", data, to=data["room"])
+
+@socketio.on("updateJob")
+def handle_update(msg, room):
+    socketio.emit("updateJob", msg, to=room, include_self=False)
 
 @socketio.on("join")
 def on_join(data):

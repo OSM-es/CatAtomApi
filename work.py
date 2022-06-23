@@ -143,7 +143,7 @@ class Work(Process):
 
     def save_file(self, file):
         filename = secure_filename(file.filename)
-        if filename.endswith(".gz") and os.path.exists(filename):
+        if filename.endswith(".gz") and self._path_exists("tasks", filename):
             tmpfo, tmpfn = mkstemp();
             file.save(tmpfn)
             try:
@@ -151,7 +151,7 @@ class Work(Process):
                     fo.read()
             except gzip.BadGzipFile:
                 return "notvalid"
-            shutil.copyfile(tmpfn, filename)
+            shutil.copyfile(tmpfn, self._path("tasks", filename))
             os.remove(tmpfn)
             return "ok"
         return "notfound"
