@@ -156,7 +156,6 @@ class Job(Resource):
         args = self.post_parser.parse_args()
         job = Work.validate(mun_code, split, **args, socketio=socketio)
         status = job.status()
-        socketio.send(status.name)
         if status not in [Work.Status.AVAILABLE, Work.Status.ERROR, Work.Status.REVIEW]:
             msg = status_msg[status][1].format(mun_code)
             abort(status_msg[status][0], message=msg)
@@ -210,12 +209,13 @@ class Job(Resource):
             "revisar": [],
         }
 
+
 class Highway(Resource):
+
+    @user.auth.login_required
     def put(self, mun_code):
         """Edita una entrada del callejero"""
-        print("highway")
-        job = Work.validate(mun_code)
-        print(request.form);
+        job = Work.validate(mun_code, socketio=socketio)
         cat = request.form["cat"]
         conv = request.form["conv"]
         data = {}
@@ -244,27 +244,6 @@ def hello_world():
     return f"{cat_config.app_name} {cat_config.app_version} API"
 
 
-@socketio.on("connect")
-def handle_connect():
-    print('a user connected')
-
-@socketio.on("disconnect")
-def handle_disconnect(data=None):
-    print('a user disconnected', data)
-
-@socketio.on("my message")
-def handle_custom_message(data):
-    print('mensaje: ', data)
-    socketio.emit("my broadcast", f"server: {data}", broadcast=True)
-
-@socketio.on("message")
-def handle_message(msg):
-    print(f"message: {msg}")
-
-@socketio.on('my event')
-def handle_my_custom_event(json):
-    print('received json: ' + str(json) + str(json["abc"]))
-
 @socketio.on("chat")
 def handle_send(data):
     socketio.emit("chat", data, to=data["room"])
@@ -273,7 +252,8 @@ def handle_send(data):
 def on_join(data):
     room = data["room"]
     join_room(room)
-    data["participants"] = len(socketio.server.manager.rooms["/"][room])
+    users = socketio.server.manager.rooms["/"][room]
+    data["participants"] = len(users)
     socketio.emit("join", data, to=room)
     return data
 
@@ -281,7 +261,8 @@ def on_join(data):
 def on_leave(data):
     room = data["room"]
     leave_room(room)
-    data["participants"] = len(socketio.server.manager.rooms["/"][room])
+    users = socketio.server.manager.rooms["/"][room]
+    data["participants"] = len(users)
     socketio.emit("leave", data, to=room)
     return data
 

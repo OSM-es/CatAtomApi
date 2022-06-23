@@ -16,10 +16,10 @@ from flask import g
 from flask_restful import abort
 from werkzeug.utils import secure_filename
 
+from csvtools import csv2dict, dict2csv
 from catatom2osm import boundary
 from catatom2osm import config as cat_config
 from catatom2osm.app import CatAtom2Osm, QgsSingleton
-from catatom2osm.csvtools import csv2dict, dict2csv
 from catatom2osm.exceptions import CatValueError
 
 
@@ -226,9 +226,15 @@ class Work(Process):
             fn = self._path("highway_names.csv")
             hgwnames = csv2dict(fn)
             if cat in hgwnames:
-                hgwnames[cat] = conv
+                user = getattr(g, "user_data", "")
+                hgwnames[cat] = [conv, user["osm_id"]]
                 dict2csv(fn, hgwnames)
-                data = list(hgwnames.items())
+                data = [
+                    [k, v[0], 0 if len(v) < 2 else v[1]]
+                    for k, v in hgwnames.items()
+                ]
+                msg = f"hgw {cat}"
+                self.socketio.emit("updateJob", msg, to=self.mun_code)
         return data
 
     def highway_names(self):
