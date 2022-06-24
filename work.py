@@ -156,6 +156,13 @@ class Work(Process):
             return "ok"
         return "notfound"
 
+    def export(self):
+        if self._path_exists("tasks"):
+            tmpfo, tmpfn = mkstemp();
+            tasks = self._path("tasks")
+            print(tasks)
+            return shutil.make_archive(tmpfn, "zip", tasks)
+
     def watchLog(self):
         while self.status() != Work.Status.RUNNING:
             pass
@@ -192,7 +199,7 @@ class Work(Process):
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             log.error(msg)
-        for fp in glob.glob(self._path("*.zip")):
+        for fp in glob.iglob(self._path("*.zip")):
             os.remove(fp)
 
     def status(self):

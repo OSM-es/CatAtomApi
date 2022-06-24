@@ -1,7 +1,7 @@
 import logging
 import os
 
-from flask import Flask, g, redirect, request
+from flask import Flask, g, redirect, request, send_file
 from flask_cors import CORS
 from flask_restful import abort, Api, reqparse, Resource
 from flask_socketio import SocketIO, join_room, leave_room
@@ -196,12 +196,14 @@ class Job(Resource):
         job = Work.validate(mun_code, split)
         if not job.delete():
             abort(410, message="No se pudo eliminar")
+        msg = f"{g.user_data['username']} elimina el proceso de {mun_code}"
+        socketio.emit("chat", msg, to=mun_code)
         return {
             "cod_municipio": mun_code,
             "cod_division": split or "",
             "propietario": None,
             "estado": Work.Status.AVAILABLE.name,
-            "mensaje": "Eliminado",
+            "mensaje": "Proceso eliminado correctamente",
             "linea": 0,
             "log": "",
             "informe": [],
@@ -225,6 +227,15 @@ class Highway(Resource):
             abort(501, message=str(e))
         return data
 
+class Export(Resource):
+
+    @user.auth.login_required
+    @check_owner
+    def get(self, mun_code):
+        """Exporta carpeta de tareas"""
+        job = Work.validate(mun_code)
+        return send_file(job.export(), attachment_filename=mun_code + ".zip")
+
 
 api.add_resource(Login,'/login')
 api.add_resource(Authorize,'/authorize')
@@ -237,6 +248,7 @@ api.add_resource(
     '/job/<string:mun_code>/',
     '/job/<string:mun_code>/<string:split>',
 )
+api.add_resource(Export,'/export/<string:mun_code>')
 api.add_resource(Highway,'/hgw/<string:mun_code>')
 
 @app.route("/")
@@ -264,10 +276,11 @@ def on_join(data):
 @socketio.on('leave')
 def on_leave(data):
     room = data["room"]
-    leave_room(room)
     users = socketio.server.manager.rooms["/"][room]
-    data["participants"] = len(users)
-    socketio.emit("leave", data, to=room)
+    leave_room(room)
+    data["participants"] = len(users) - 1
+    if len(users) > 1:
+        socketio.emit("leave", data, to=room)
     return data
 
 
