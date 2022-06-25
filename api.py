@@ -278,8 +278,8 @@ def on_leave(data):
     room = data["room"]
     users = socketio.server.manager.rooms["/"][room]
     leave_room(room)
-    data["participants"] = len(users) - 1
-    if len(users) > 1:
+    data["participants"] = len(users)
+    if len(users) > 0:
         socketio.emit("leave", data, to=room)
     return data
 
