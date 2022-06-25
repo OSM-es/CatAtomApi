@@ -240,8 +240,6 @@ class Work(Process):
                     [k, v[0], 0 if len(v) < 2 else v[1]]
                     for k, v in hgwnames.items()
                 ]
-                msg = f"hgw {cat}"
-                self.socketio.emit("updateJob", msg, to=self.mun_code)
         return data
 
     def highway_names(self):
