@@ -21,7 +21,7 @@ app = Flask(__name__, instance_relative_config=True)
 app.config.from_object('config')
 origins = ["http://localhost", "http://localhost:8080"]
 cors = CORS(app, resources={r"/*": {"origins": origins}}, supports_credentials=True)
-socketio = SocketIO(app, cors_allowed_origins=origins])
+socketio = SocketIO(app, cors_allowed_origins=origins)
 api = Api(app)
 
 status_msg = {
