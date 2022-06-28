@@ -13,4 +13,13 @@ services:
       - "5000:5000"
     expose:
       - "5000"
+    networks:
+      default:
+        aliases:
+          - api
+
+networks:
+  default:
+    external:
+      name: catatom
 

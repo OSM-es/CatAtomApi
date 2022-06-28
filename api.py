@@ -19,8 +19,9 @@ from work import Work, check_owner
 WORK_DIR = os.environ['HOME']
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_object('config')
-cors = CORS(app, resources={r"/*": {"origins": ["http://localhost:8080"]}}, supports_credentials=True)
-socketio = SocketIO(app, cors_allowed_origins="http://localhost:8080")
+origins = ["http://localhost", "http://localhost:8080"]
+cors = CORS(app, resources={r"/*": {"origins": origins}}, supports_credentials=True)
+socketio = SocketIO(app, cors_allowed_origins=origins])
 api = Api(app)
 
 status_msg = {
@@ -286,4 +287,4 @@ def on_leave(data):
 
 if __name__ == '__main__':
     flask_port = os.environ["FLASK_PORT"]
-    socketio.run(app, "0.0.0.0", flask_port)
+    socketio.run(app, "0.0.0.0", flask_port, log_output=True)

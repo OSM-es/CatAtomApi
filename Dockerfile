@@ -14,6 +14,8 @@ ARG FLASK_ENV
 ENV APP_PATH=/opt/CatAtomAPI
 ENV PYTHONPATH=$PYTHONPATH:$APP_PATH
 ENV QT_QPA_PLATFORM=offscreen
+ENV XDG_RUNTIME_DIR="/tmp/runtime-$user"
+ENV PYTHONUNBUFFERED=1
 
 USER root
 
@@ -45,4 +47,4 @@ EXPOSE $FLASK_PORT
 
 USER $user
 
-CMD [ "python3", "./api.py" ]
+CMD [ "python3", "-u", "./api.py" ]
