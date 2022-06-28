@@ -230,12 +230,14 @@ class Highway(Resource):
 
 class Export(Resource):
 
-    @user.auth.login_required
-    @check_owner
     def get(self, mun_code):
         """Exporta carpeta de tareas"""
         job = Work.validate(mun_code)
-        return send_file(job.export(), attachment_filename=mun_code + ".zip")
+        data = job.export()
+        if data:
+            return send_file(data, download_name=mun_code + ".zip")
+        else:
+            abort(404, message="Proceso no encontrado")
 
 
 api.add_resource(Login,'/login')
