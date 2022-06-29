@@ -16,6 +16,7 @@ class Config:
     OSM_CLIENT_ID = os.getenv("OSM_CLIENT_ID", "")
     OSM_CLIENT_SECRET = os.getenv("OSM_CLIENT_SECRET", "")
     SESSION_COOKIE_SAMESITE = "Strict"
+    MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 Mb
 
 class DevelopmentConfig(Config):
     CLIENT_URL = "http://localhost:8080"
