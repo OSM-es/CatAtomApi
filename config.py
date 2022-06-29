@@ -18,7 +18,7 @@ class Config:
     SESSION_COOKIE_SAMESITE = "Strict"
 
 class DevelopmentConfig(Config):
-    CLIENT_URL = "http://localhost"
+    CLIENT_URL = "http://localhost:8080"
 
 class ProductionConfig(Config):
     API_URL = "https://cat.cartobase.es/api"
