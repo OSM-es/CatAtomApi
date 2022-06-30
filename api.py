@@ -164,7 +164,8 @@ class Job(Resource):
             abort(status_msg[status][0], message=msg)
         try:
             job.start()
-            msg = f"{g.user_data['username']} inicia el proceso de {mun_code}"
+            prefix = "re" if status == Work.Status.REVIEW else ""
+            msg = f"{g.user_data['username']} {prefix}inicia el proceso de {mun_code}"
             socketio.emit("chat", msg, to=mun_code)
             socketio.start_background_task(job.watchLog)
         except Exception as e:
