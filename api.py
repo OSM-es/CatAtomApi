@@ -164,9 +164,8 @@ class Job(Resource):
             abort(status_msg[status][0], message=msg)
         try:
             job.start()
-            prefix = "re" if status == Work.Status.REVIEW else ""
-            msg = f"{g.user_data['username']} {prefix}inicia el proceso de {mun_code}"
-            socketio.emit("chat", msg, to=mun_code)
+            data = {"username": g.user_data["username"], "room": mun_code}
+            socketio.emit("create_job", data, to=mun_code)
             socketio.start_background_task(job.watchLog)
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
@@ -200,8 +199,8 @@ class Job(Resource):
         job = Work.validate(mun_code, split)
         if not job.delete():
             abort(410, message="No se pudo eliminar")
-        msg = f"{g.user_data['username']} elimina el proceso de {mun_code}"
-        socketio.emit("chat", msg, to=mun_code)
+        data = {"username": g.user_data["username"], "room": mun_code}
+        socketio.emit("delete_job", data, to=mun_code)
         return {
             "cod_municipio": mun_code,
             "cod_division": split or "",
