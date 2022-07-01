@@ -178,7 +178,6 @@ class Job(Resource):
         }
 
     @user.auth.login_required
-    @check_owner
     def put(self, mun_code, split=None):
         job = Work.validate(mun_code, split=split)
         file = request.files["file"]
@@ -273,7 +272,7 @@ def handle_update(msg, room):
 def on_join(data):
     room = data["room"]
     join_room(room)
-    users = socketio.server.manager.rooms["/"][room]
+    users = socketio.server.manager.rooms["/"].get(room, [])
     data["participants"] = len(users)
     socketio.emit("join", data, to=room)
     return data
@@ -281,7 +280,7 @@ def on_join(data):
 @socketio.on('leave')
 def on_leave(data):
     room = data["room"]
-    users = socketio.server.manager.rooms["/"][room]
+    users = socketio.server.manager.rooms["/"].get(room, [])
     leave_room(room)
     data["participants"] = len(users)
     if len(users) > 0:

@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import subprocess
+import re
 import time
 from enum import Enum, auto
 from functools import wraps
@@ -19,6 +20,7 @@ from werkzeug.utils import secure_filename
 from csvtools import csv2dict, dict2csv
 from catatom2osm import boundary
 from catatom2osm import config as cat_config
+from catatom2osm import osmxml
 from catatom2osm.app import CatAtom2Osm, QgsSingleton
 from catatom2osm.exceptions import CatValueError
 
@@ -142,18 +144,33 @@ class Work(Process):
         return rows, i
 
     def save_file(self, file):
-        filename = secure_filename(file.filename)
-        if filename.endswith(".gz") and self._path_exists("tasks", filename):
-            tmpfo, tmpfn = mkstemp();
-            file.save(tmpfn)
-            try:
-                with gzip.open(tmpfn) as fo:
-                    fo.read()
-            except gzip.BadGzipFile:
-                return "notvalid"
+        tmpfo, tmpfn = mkstemp()
+        file.save(tmpfn)
+        try:
+            with gzip.open(tmpfn) as fo:
+                data = osmxml.deserialize(fo)
+                comment = data.tags.get("comment", "")
+                match = re.search(" ([0-9A-Z]{14})$", comment)
+                if match:
+                    filename = match.group(1) + ".osm.gz"
+                else:
+                    filename = secure_filename(file.filename)
+        except (gzip.BadGzipFile, osmxml.etree.Error) as e:
+            return "notvalid"
+        fn = self._path("review.txt")
+        review = csv2dict(fn)
+        taskname = filename.split(".")[0]
+        if filename.endswith(".gz") and taskname in review:
             shutil.copyfile(tmpfn, self._path("tasks", filename))
             os.remove(tmpfn)
+            fixmes = 0
+            for el in data.elements:
+                if "fixme" in el.tags:
+                    fixmes += 1
+            review[taskname] = [str(fixmes), g.user_data["osm_id"]]
+            dict2csv(fn, review)
             return "ok"
+        os.remove(tmpfn)
         return "notfound"
 
     def export(self):
@@ -259,15 +276,17 @@ class Work(Process):
 
     def review(self, status=False):
         review = []
-        if self._path_exists("tasks"):
-            for fn in os.listdir(self._path("tasks")):
-                if fn.endswith(".osm.gz"):
-                    with gzip.open(self._path("tasks", fn)) as fo:
-                        if b"fixme" in fo.read():
-                            review.append(fn)
-                            if status:
-                                break
-        return sorted(review)
+        if self._path_exists("review.txt"):
+            review = [
+                {
+                    "filename": k + ".osm.gz",
+                    "fixmes": v[0] if len(v) > 0 else None,
+                    "owner": v[1] if len(v) > 1 else None,
+                    "blocked": v[2] if len(v) > 2 else None,
+                }
+                for k, v in csv2dict(self._path("review.txt")).items()
+            ]
+        return review
 
     def delete(self):
         if self.split:
