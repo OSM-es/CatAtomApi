@@ -148,7 +148,7 @@ class Job(Resource):
                 data["cod_division"] = data["report"]["split_id"]
         if status == Work.Status.REVIEW:
             data["callejero"] = job.highway_names()
-        if status == Work.Status.FIXME:
+        if status == Work.Status.FIXME or status == Work.Status.DONE:
             data["revisar"] = job.review()
         return data
 
@@ -165,8 +165,8 @@ class Job(Resource):
         try:
             job.start()
             data = {"username": g.user_data["username"], "room": mun_code}
-            socketio.emit("create_job", data, to=mun_code)
-            socketio.start_background_task(job.watchLog)
+            socketio.emit("createJob", data, to=mun_code)
+            socketio.start_background_task(job.watch_log)
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
@@ -178,19 +178,6 @@ class Job(Resource):
         }
 
     @user.auth.login_required
-    def put(self, mun_code, split=None):
-        job = Work.validate(mun_code, split=split)
-        file = request.files["file"]
-        try:
-            status = job.save_file(file)
-        except Exception as e:
-            abort(500, message=str(e))
-        if status == "notfound":
-            abort(400, message="Sólo archivos de tareas existentes")
-        if status == "notvalid":
-            abort(400, message="No es un archivo gzip válido")
-
-    @user.auth.login_required
     @check_owner
     def delete(self, mun_code, split=None):
         """Eliminar proceso."""
@@ -199,7 +186,7 @@ class Job(Resource):
         if not job.delete():
             abort(410, message="No se pudo eliminar")
         data = {"username": g.user_data["username"], "room": mun_code}
-        socketio.emit("delete_job", data, to=mun_code)
+        socketio.emit("deleteJob", data, to=mun_code)
         return {
             "cod_municipio": mun_code,
             "cod_division": split or "",
@@ -229,6 +216,37 @@ class Highway(Resource):
             abort(501, message=str(e))
         return data
 
+
+class Fixme(Resource):
+
+    @user.auth.login_required
+    def post(self, mun_code):
+        job = Work.validate(mun_code)
+        filename = request.json["filename"]
+        return job.lock_fixme(filename)
+
+    @user.auth.login_required
+    def put(self, mun_code):
+        job = Work.validate(mun_code)
+        file = request.files["file"]
+        try:
+            status = job.save_fixme(file)
+        except Exception as e:
+            abort(500, message=str(e))
+        if status == "notfound":
+            abort(400, message="Sólo archivos de tareas existentes")
+        if status == "notvalid":
+            abort(400, message="No es un archivo gzip válido")
+        return status
+
+    @user.auth.login_required
+    @check_owner
+    def delete(self, mun_code):
+        job = Work.validate(mun_code)
+        job.clear_fixmes()
+        socketio.emit("done", to=mun_code)
+
+
 class Export(Resource):
 
     def get(self, mun_code):
@@ -252,8 +270,9 @@ api.add_resource(
     '/job/<string:mun_code>/',
     '/job/<string:mun_code>/<string:split>',
 )
-api.add_resource(Export,'/export/<string:mun_code>')
 api.add_resource(Highway,'/hgw/<string:mun_code>')
+api.add_resource(Fixme,'/fixme/<string:mun_code>')
+api.add_resource(Export,'/export/<string:mun_code>')
 
 @app.route("/")
 def hello_world():
@@ -267,6 +286,10 @@ def handle_send(data):
 @socketio.on("updateJob")
 def handle_update(msg, room):
     socketio.emit("updateJob", msg, to=room, include_self=False)
+
+@socketio.on("fixme")
+def handle_fixme(data, room):
+    socketio.emit("fixme", data, to=room, include_self=False)
 
 @socketio.on("join")
 def on_join(data):

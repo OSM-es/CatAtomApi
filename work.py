@@ -112,6 +112,16 @@ class Work(Process):
             abort(404, message=str(e))
         return job
 
+    @staticmethod
+    def _get_review_dict(k, v):
+        return {
+            "filename": k + ".osm.gz",
+            "fixmes": v[0] if len(v) > 0 else None,
+            "owner": v[1] if len(v) > 1 else None,
+            "username": v[2] if len(v) > 2 else None,
+            "locked": v[3] if len(v) > 3 else None,
+        }
+
     def _path(self, *args):
         return os.path.join(self.path, *args)
 
@@ -143,7 +153,25 @@ class Work(Process):
                     i += 1
         return rows, i
 
-    def save_file(self, file):
+    def lock_fixme(self, filename):
+        fn = self._path("review.txt")
+        review = csv2dict(fn)
+        taskname = filename.split(".")[0]
+        print(taskname, review)
+        fixme = []
+        if taskname in review:
+            fixmes = review[taskname][0]
+            fixme = [
+                str(fixmes),
+                g.user_data["osm_id"],
+                g.user_data["username"],
+                "true",
+            ]
+            review[taskname] = fixme
+            dict2csv(fn, review)
+        return self._get_review_dict(taskname, fixme)
+
+    def save_fixme(self, file):
         tmpfo, tmpfn = mkstemp()
         file.save(tmpfn)
         try:
@@ -167,11 +195,18 @@ class Work(Process):
             for el in data.elements:
                 if "fixme" in el.tags:
                     fixmes += 1
-            review[taskname] = [str(fixmes), g.user_data["osm_id"]]
+            fixme = [str(fixmes), g.user_data["osm_id"], g.user_data["username"]]
+            review[taskname] = fixme
             dict2csv(fn, review)
-            return "ok"
+            return self._get_review_dict(taskname, fixme)
         os.remove(tmpfn)
         return "notfound"
+
+    def clear_fixmes(self):
+        fn = self._path("review.txt")
+        review = csv2dict(fn)
+        if sum([int(fixme[0]) for fixme in review.values()]) == 0:
+            os.rename(self._path("review.txt"), self._path("review.txt.bak"))
 
     def export(self):
         if self._path_exists("tasks"):
@@ -180,7 +215,7 @@ class Work(Process):
             print(tasks)
             return shutil.make_archive(tmpfn, "zip", tasks)
 
-    def watchLog(self):
+    def watch_log(self):
         while self.status() != Work.Status.RUNNING:
             pass
         lines = 0
@@ -194,6 +229,8 @@ class Work(Process):
         if len(log) > 0:
             msg = f"log {lines}"
             self.socketio.emit("updateJob", msg, to=self.mun_code)
+        if self.status() == Work.Status.DONE:
+            socketio.emit("done", to=self.mun_code)
 
     def run(self):
         mun_code = self.mun_code
@@ -220,7 +257,6 @@ class Work(Process):
             os.remove(fp)
 
     def status(self):
-        review = self.review(status=True)
         if self._path_exists() and self._path_exists("user.json"):
             if self._path_exists("catatom2osm.log"):
                 with open(self._path("catatom2osm.log"), "r") as fo:
@@ -230,7 +266,7 @@ class Work(Process):
             if self._path_exists("report.txt"):
                 if self._path_exists("highway_names.csv"):
                     return Work.Status.REVIEW
-                if len(review) > 0:
+                if self._path_exists("review.txt"):
                     return Work.Status.FIXME
                 if self._path_exists("tasks"):
                     if not self.split is None:
@@ -274,17 +310,15 @@ class Work(Process):
             return report
         return {}
 
-    def review(self, status=False):
+    def review(self):
         review = []
-        if self._path_exists("review.txt"):
+        fn = "review.txt"
+        if not self._path_exists(fn):
+            fn = "review.txt.bak"
+        if self._path_exists(fn):
             review = [
-                {
-                    "filename": k + ".osm.gz",
-                    "fixmes": v[0] if len(v) > 0 else None,
-                    "owner": v[1] if len(v) > 1 else None,
-                    "blocked": v[2] if len(v) > 2 else None,
-                }
-                for k, v in csv2dict(self._path("review.txt")).items()
+                self._get_review_dict(k, v)
+                for k, v in csv2dict(self._path(fn)).items()
             ]
         return review
 
