@@ -146,7 +146,7 @@ class Job(Resource):
             data["report"] = job.report_json()
             if "split_id" in data["report"]:
                 data["cod_division"] = data["report"]["split_id"]
-        if status == Work.Status.REVIEW:
+        if status in [Work.Status.REVIEW, Work.Status.FIXME, Work.Status.DONE]:
             data["callejero"] = job.highway_names()
         if status == Work.Status.FIXME or status == Work.Status.DONE:
             data["revisar"] = job.review()
@@ -207,11 +207,9 @@ class Highway(Resource):
     def put(self, mun_code):
         """Edita una entrada del callejero"""
         job = Work.validate(mun_code, socketio=socketio)
-        cat = request.form["cat"]
-        conv = request.form["conv"]
         data = {}
         try:
-            data = job.update_highway_name(cat, conv)
+            data = job.update_highway_name(request.json)
         except OSError as e:
             abort(501, message=str(e))
         return data
@@ -290,6 +288,10 @@ def handle_update(msg, room):
 @socketio.on("fixme")
 def handle_fixme(data, room):
     socketio.emit("fixme", data, to=room, include_self=False)
+
+@socketio.on("highway")
+def handle_fixme(data, room):
+    socketio.emit("highway", data, to=room, include_self=False)
 
 @socketio.on("join")
 def on_join(data):

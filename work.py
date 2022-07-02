@@ -117,7 +117,7 @@ class Work(Process):
         return {
             "filename": k + ".osm.gz",
             "fixmes": v[0] if len(v) > 0 else None,
-            "owner": v[1] if len(v) > 1 else None,
+            "osm_id": v[1] if len(v) > 1 else None,
             "username": v[2] if len(v) > 2 else None,
             "locked": v[3] if len(v) > 3 else None,
         }
@@ -157,7 +157,6 @@ class Work(Process):
         fn = self._path("review.txt")
         review = csv2dict(fn)
         taskname = filename.split(".")[0]
-        print(taskname, review)
         fixme = []
         if taskname in review:
             fixmes = review[taskname][0]
@@ -212,7 +211,6 @@ class Work(Process):
         if self._path_exists("tasks"):
             tmpfo, tmpfn = mkstemp();
             tasks = self._path("tasks")
-            print(tasks)
             return shutil.make_archive(tmpfn, "zip", tasks)
 
     def watch_log(self):
@@ -280,23 +278,25 @@ class Work(Process):
     def log(self, from_row=0):
         return self._get_file("catatom2osm.log", from_row)
 
-    def update_highway_name(self, cat, conv):
-        data = []
+    def update_highway_name(self, data):
         if self._path_exists("highway_names.csv"):
             fn = self._path("highway_names.csv")
             hgwnames = csv2dict(fn)
+            cat = data["cat"]
+            conv = data["conv"]
             if cat in hgwnames:
                 user = getattr(g, "user_data", "")
-                hgwnames[cat] = [conv, user["osm_id"]]
+                data["osm_id"] = user["osm_id"]
+                data["username"] = user["username"]
+                hgwnames[cat] = [conv, user["osm_id"], user["username"]]
                 dict2csv(fn, hgwnames)
-                data = [
-                    [k, v[0], 0 if len(v) < 2 else v[1]]
-                    for k, v in hgwnames.items()
-                ]
         return data
 
     def highway_names(self):
-        return [row.split("\t") for row in self._get_file("highway_names.csv")[0]]
+        highway_names = self._get_file("highway_names.csv")[0]
+        if not highway_names:
+            highway_names = self._get_file("tasks/highway_names.csv")[0]
+        return [row.split("\t") for row in highway_names]
 
     def report(self):
         return self._get_file("report.txt")[0]
