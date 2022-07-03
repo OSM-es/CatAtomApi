@@ -11,7 +11,6 @@ from catatom2osm import config as cat_config
 cat_config.get_user_config('catconfig.yaml')
 
 from catatom2osm import csvtools
-from catatom2osm.boundary import get_districts
 
 import user
 from work import Work, check_owner
@@ -101,17 +100,8 @@ class Municipality(Resource):
     def get(self, mun_code):
         """Devuelve lista de distritos/barrios"""
         job = Work.validate(mun_code)
-        divisiones = [
-            {
-                "osm_id": district[1],
-                "nombre": f"{'  ' if district[0] else ''}{district[2]} {district[3]}",
-            } 
-            for district in get_districts(mun_code)
-        ]
-        return {
-            "cod_municipio": mun_code,
-            "divisiones": divisiones,
-        }
+        return job.splits()
+
 
 class Job(Resource):
     def __init__(self):

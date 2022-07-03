@@ -22,6 +22,7 @@ from catatom2osm import boundary
 from catatom2osm import config as cat_config
 from catatom2osm import osmxml
 from catatom2osm.app import CatAtom2Osm, QgsSingleton
+from catatom2osm.boundary import get_districts
 from catatom2osm.exceptions import CatValueError
 
 
@@ -327,3 +328,29 @@ class Work(Process):
             return self._path_remove("tasks", self.split)
         return self._path_remove()
 
+    def _splits(self):
+        print("_splits")
+        divisiones = [
+            {
+                "osm_id": district[1],
+                "nombre": f"{'  ' if district[0] else ''}{district[2]} {district[3]}",
+            } 
+            for district in get_districts(self.mun_code)
+        ]
+        with open(self._path("splits.json"), "w") as fo:
+            json.dump(divisiones, fo)
+        return divisiones
+
+    def splits(self):
+        self._path_create()
+        if self._path_exists("splits.json"):
+            with open(self._path("splits.json"), "r") as fo:
+                divisiones = json.load(fo)
+            p = Process(target=self._splits)
+            p.start()
+        else:
+            divisiones = self._splits()
+        return {
+            "cod_municipio": self.mun_code,
+            "divisiones": divisiones,
+        }
