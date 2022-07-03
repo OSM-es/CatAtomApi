@@ -277,6 +277,18 @@ def hello_world():
     return f"{cat_config.app_name} {cat_config.app_version} API"
 
 
+@socketio.on("disconnect")
+def handle_disconnect():
+    data = {"username": request.args["username"]}
+    for room in list(socketio.server.manager.rooms["/"].keys()):
+        users = socketio.server.manager.rooms["/"].get(room)
+        if room and len(room) == 5 and request.sid in users:
+            data["room"] = room
+            leave_room(room)
+            data["participants"] = len(users)
+            if len(users) > 0:
+                socketio.emit("leave", data, to=room)
+
 @socketio.on("chat")
 def handle_send(data):
     socketio.emit("chat", data, to=data["room"])
