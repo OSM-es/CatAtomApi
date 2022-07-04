@@ -130,6 +130,7 @@ class Job(Resource):
             "informe": [],
             "report": {},
             "revisar": [],
+            "callejero": [],
         }
         if status != Work.Status.AVAILABLE and status != Work.Status.RUNNING: 
             data["informe"] = job.report()
@@ -188,6 +189,7 @@ class Job(Resource):
             "informe": [],
             "report": [],
             "revisar": [],
+            "callejero": [],
         }
 
 
@@ -292,7 +294,7 @@ def handle_fixme(data, room):
     socketio.emit("fixme", data, to=room, include_self=False)
 
 @socketio.on("highway")
-def handle_fixme(data, room):
+def handle_highway(data, room):
     socketio.emit("highway", data, to=room, include_self=False)
 
 @socketio.on("join")

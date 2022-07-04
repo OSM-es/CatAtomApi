@@ -329,7 +329,6 @@ class Work(Process):
         return self._path_remove()
 
     def _splits(self):
-        print("_splits")
         divisiones = [
             {
                 "osm_id": district[1],
