@@ -141,6 +141,8 @@ class Job(Resource):
             data["callejero"] = job.highway_names()
         if status == Work.Status.FIXME or status == Work.Status.DONE:
             data["revisar"] = job.review()
+        if status == Work.Status.DONE:
+            data["next_args"] = job.next_args() or ""
         return data
 
     @user.auth.login_required
@@ -150,7 +152,10 @@ class Job(Resource):
         args = self.post_parser.parse_args()
         job = Work.validate(mun_code, split, **args, socketio=socketio)
         status = job.status()
-        if status not in [Work.Status.AVAILABLE, Work.Status.ERROR, Work.Status.REVIEW]:
+        if (
+            (status == Work.Status.DONE and job.current_args() == job.last_args())
+            or status in [Work.Status.FIXME, Work.Status.RUNNING]
+        ):
             msg = status_msg[status][1].format(mun_code)
             abort(status_msg[status][0], message=msg)
         try:

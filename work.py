@@ -86,11 +86,7 @@ class Work(Process):
             parcel=[],
             log_level='INFO',
         )
-        if address and not building:
-            self.options.args += "-d "
-        if building and not address:
-            self.options.args += "-b "
-        self.options.args += mun_code
+        self.options.args = self.current_args() + mun_code
         if self.split:
             self.options.args += f"-s {self.split}"
         self.osm_id, self.name = boundary.get_municipality(mun_code)
@@ -141,6 +137,9 @@ class Work(Process):
                 os.remove(self._path(*args))
             return True
         return False
+
+    def _path_islink(self, *args):
+        return os.path.islink(self._path(*args))
 
     def _get_file(self, filename, from_row=0):
         fn = self._path(filename)
@@ -229,11 +228,39 @@ class Work(Process):
             msg = f"log {lines}"
             self.socketio.emit("updateJob", msg, to=self.mun_code)
         if self.status() == Work.Status.DONE:
-            socketio.emit("done", to=self.mun_code)
+            self.socketio.emit("done", to=self.mun_code)
+
+    def current_args(self):
+        if self.options.building and not self.options.address:
+            return "-b"
+        if self.options.address and not self.options.building:
+            return "-d"
+        return ""
+
+    def next_args(self):
+        if self.status() == self.Status.DONE:
+            if self._path_islink("tasks-b") and not self._path_exists("tasks-d"):
+                return "-d"
+            if self._path_islink("tasks-d") and not self._path_exists("tasks-b"):
+              return "-b"
+        return ""
+
+    def last_args(self):
+        if self.status() == self.Status.DONE:
+            if self._path_islink("tasks-b") and not self._path_exists("tasks-d"):
+                return "-b"
+            if self._path_islink("tasks-d") and not self._path_exists("tasks-b"):
+              return "-d"
+        return ""
 
     def run(self):
         mun_code = self.mun_code
         self._path_create()
+        if self.last_args():
+            src = self._path("tasks")
+            dst = self._path("tasks" + self.last_args())
+            os.remove(dst)
+            os.rename(src, dst)
         self._path_remove("catatom2osm.log")
         self._path_remove("report.txt")
         socketio_logger = logging.getLogger("socketio.server")
@@ -254,6 +281,9 @@ class Work(Process):
             log.error(msg)
         for fp in glob.iglob(self._path("*.zip")):
             os.remove(fp)
+        target = self.current_args()
+        if target and not self._path_islink("tasks" + target):
+            os.symlink(self._path("tasks"), self._path("tasks" + target))
 
     def status(self):
         if self._path_exists() and self._path_exists("user.json"):
