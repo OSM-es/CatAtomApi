@@ -67,8 +67,6 @@ class Work(Process):
         self.split = split
         self.idioma = idioma
         self.socketio = socketio
-        if socketio:
-            self.socketio.send("init")
         self.path = os.path.join(WORK_DIR, self.mun_code)
         self.options = argparse.Namespace(
             path = [mun_code],
@@ -110,7 +108,7 @@ class Work(Process):
         return job
 
     @staticmethod
-    def _get_review_dict(k, v):
+    def _get_fixme_dict(k, v):
         return {
             "filename": k + ".osm.gz",
             "fixmes": v[0] if len(v) > 0 else None,
@@ -168,7 +166,7 @@ class Work(Process):
             ]
             review[taskname] = fixme
             dict2csv(fn, review)
-        return self._get_review_dict(taskname, fixme)
+        return self._get_fixme_dict(taskname, fixme)
 
     def save_fixme(self, file):
         tmpfo, tmpfn = mkstemp()
@@ -197,7 +195,7 @@ class Work(Process):
             fixme = [str(fixmes), g.user_data["osm_id"], g.user_data["username"]]
             review[taskname] = fixme
             dict2csv(fn, review)
-            return self._get_review_dict(taskname, fixme)
+            return self._get_fixme_dict(taskname, fixme)
         os.remove(tmpfn)
         return "notfound"
 
@@ -213,20 +211,18 @@ class Work(Process):
             tasks = self._path("tasks")
             return shutil.make_archive(tmpfn, "zip", tasks)
 
-    def watch_log(self):
+    def watch_log(self, user_data):
         while self.status() != Work.Status.RUNNING:
             pass
         lines = 0
         while self.status() == Work.Status.RUNNING:
             log, lines = self.log(lines)
             if len(log) > 0:
-                msg = f"log {lines}"
-                self.socketio.emit("updateJob", msg, to=self.mun_code)
+                self.socketio.emit("updateJob", user_data, to=self.mun_code)
             self.socketio.sleep(0.5)
         log, lines = self.log(lines)
         if len(log) > 0:
-            msg = f"log {lines}"
-            self.socketio.emit("updateJob", msg, to=self.mun_code)
+            self.socketio.emit("updateJob", user_data, to=self.mun_code)
         if self.status() == Work.Status.DONE:
             self.socketio.emit("done", to=self.mun_code)
 
@@ -348,7 +344,7 @@ class Work(Process):
             fn = "review.txt.bak"
         if self._path_exists(fn):
             review = [
-                self._get_review_dict(k, v)
+                self._get_fixme_dict(k, v)
                 for k, v in csv2dict(self._path(fn)).items()
             ]
         return review

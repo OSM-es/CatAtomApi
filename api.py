@@ -160,9 +160,9 @@ class Job(Resource):
             abort(status_msg[status][0], message=msg)
         try:
             job.start()
-            data = {"username": g.user_data["username"], "room": mun_code}
+            data = dict(**g.user_data, room=mun_code)
             socketio.emit("createJob", data, to=mun_code)
-            socketio.start_background_task(job.watch_log)
+            socketio.start_background_task(job.watch_log, g.user_data)
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
@@ -181,7 +181,7 @@ class Job(Resource):
         job = Work.validate(mun_code, split)
         if not job.delete():
             abort(410, message="No se pudo eliminar")
-        data = {"username": g.user_data["username"], "room": mun_code}
+        data = dict(**g.user_data, room=mun_code)
         socketio.emit("deleteJob", data, to=mun_code)
         return {
             "cod_municipio": mun_code,
@@ -207,6 +207,7 @@ class Highway(Resource):
         data = {}
         try:
             data = job.update_highway_name(request.json)
+            socketio.emit("highway", data, to=mun_code)
         except OSError as e:
             abort(501, message=str(e))
         return data
@@ -218,7 +219,9 @@ class Fixme(Resource):
     def post(self, mun_code):
         job = Work.validate(mun_code)
         filename = request.json["filename"]
-        return job.lock_fixme(filename)
+        status = job.lock_fixme(filename)
+        socketio.emit("fixme", status, to=mun_code)
+        return status
 
     @user.auth.login_required
     def put(self, mun_code):
@@ -232,6 +235,7 @@ class Fixme(Resource):
             abort(400, message="Sólo archivos de tareas existentes")
         if status == "notvalid":
             abort(400, message="No es un archivo gzip válido")
+        socketio.emit("fixme", status, to=mun_code)
         return status
 
     @user.auth.login_required
@@ -239,7 +243,8 @@ class Fixme(Resource):
     def delete(self, mun_code):
         job = Work.validate(mun_code)
         job.clear_fixmes()
-        socketio.emit("done", to=mun_code)
+        data = dict(**g.user_data, room=mun_code)
+        socketio.emit("done", data, to=mun_code)
 
 
 class Export(Resource):
@@ -273,7 +278,6 @@ api.add_resource(Export,'/export/<string:mun_code>')
 def hello_world():
     return f"{cat_config.app_name} {cat_config.app_version} API"
 
-
 @socketio.on("disconnect")
 def handle_disconnect():
     data = {"username": request.args["username"]}
@@ -289,18 +293,6 @@ def handle_disconnect():
 @socketio.on("chat")
 def handle_send(data):
     socketio.emit("chat", data, to=data["room"])
-
-@socketio.on("updateJob")
-def handle_update(msg, room):
-    socketio.emit("updateJob", msg, to=room, include_self=False)
-
-@socketio.on("fixme")
-def handle_fixme(data, room):
-    socketio.emit("fixme", data, to=room, include_self=False)
-
-@socketio.on("highway")
-def handle_highway(data, room):
-    socketio.emit("highway", data, to=room, include_self=False)
 
 @socketio.on("join")
 def on_join(data):
