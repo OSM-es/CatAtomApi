@@ -1,7 +1,7 @@
 import logging
 import os
 
-from flask import Flask, g, redirect, request, send_file
+from flask import Flask, g, request, send_file
 from flask_cors import CORS
 from flask_restful import abort, Api, reqparse, Resource
 from flask_socketio import SocketIO, join_room, leave_room
@@ -46,11 +46,12 @@ status_msg = {
     ),
 }
 
-
 class Login(Resource):
     def get(self):
-        callback = request.args.get('callback')
-        return user.get_authorize_url(callback)
+        callback = request.args.get('callback', False)
+        if (callback):
+            return user.get_authorize_url(callback)
+        abort(400)
 
     @user.auth.login_required
     def put(self):
@@ -62,7 +63,6 @@ class Authorize(Resource):
         if user_params is None:
             abort(404, message="Autorización denegada")
         return user_params
-
 
 class Provinces(Resource):
     def get(self):
@@ -199,6 +199,11 @@ class Job(Resource):
 
 
 class Highway(Resource):
+
+    def get(self, mun_code):
+        street = request.args.get('street', '')
+        job = Work.validate(mun_code, socketio=socketio)
+        return job.get_highway_name(street)
 
     @user.auth.login_required
     def put(self, mun_code):

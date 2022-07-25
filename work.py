@@ -305,6 +305,19 @@ class Work(Process):
     def log(self, from_row=0):
         return self._get_file("catatom2osm.log", from_row)
 
+    def get_highway_name(self, street):
+        if self._path_exists("address.geojson"):
+            with open(self._path("address.geojson"), "r") as fo:
+                data = json.loads(fo.read())
+            if street:
+                filtered = [
+                    feat for feat in data['features']
+                    if feat['properties']['TN_text'] == street
+                ]
+                data['features'] = filtered
+            return data
+        return {}
+
     def update_highway_name(self, data):
         if self._path_exists("highway_names.csv"):
             fn = self._path("highway_names.csv")

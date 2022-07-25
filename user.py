@@ -23,14 +23,13 @@ def verify_token(token):
     serializer = URLSafeTimedSerializer(current_app.secret_key)
     try:
         g.user_data = serializer.loads(token, max_age=864000)
-    except (SignatureExpired, BadSignature):
+    except (SignatureExpired, BadSignature) as e:
         return False
     return g.user_data
 
 def get_authorize_url(callback_url = None):
-    api_url = current_app.config.get("API_URL", request.host_url)
-    callback = callback_url or (api_url + url_for("callback"))
-    return osm.authorize_redirect(callback)
+    if callback_url:
+        return osm.authorize_redirect(callback_url)
 
 def authorize():
     try:
