@@ -7,6 +7,7 @@ import os
 import shutil
 import subprocess
 import re
+from telnetlib import STATUS
 import time
 from enum import Enum, auto
 from functools import wraps
@@ -26,8 +27,9 @@ from catatom2osm.boundary import get_districts
 from catatom2osm.exceptions import CatValueError
 
 
-WORK_DIR = os.environ['HOME']
-
+WORK_DIR = os.path.join(os.environ['HOME'], 'results')
+BACKUP_DIR = os.path.join(os.environ['HOME'], 'backup')
+CACHE_DIR = os.path.join(os.environ['HOME'], 'cache')
 
 def check_owner(f):
     @wraps(f)
@@ -151,6 +153,23 @@ class Work(Process):
                     i += 1
         return rows, i
 
+    def _read_cache(self):
+        for t in ['AD', 'BU', 'CP']:
+            fp = f"A.ES.SDGC.{t}.{self.mun_code}.zip"
+            cached = os.path.join(CACHE_DIR, fp)
+            if os.path.exists(cached):
+                shutil.copy(cached, self._path(fp))
+            elif self._path_exists(fp):
+                shutil.copy(self._path(fp), cached)
+
+    def _backup_files(self):
+        for fp in glob.iglob(self._path("*.zip")):
+            backup = os.path.join(BACKUP_DIR, os.path.basename(fp))
+            cached = os.path.join(CACHE_DIR, os.path.basename(fp))
+            shutil.move(fp, backup)
+            if self.status() == Work.Status.DONE and os.path.exists(cached):
+                os.remove(cached)
+
     def lock_fixme(self, filename):
         fn = self._path("review.txt")
         review = csv2dict(fn)
@@ -259,6 +278,7 @@ class Work(Process):
             os.rename(src, dst)
         self._path_remove("catatom2osm.log")
         self._path_remove("report.txt")
+        self._read_cache()
         socketio_logger = logging.getLogger("socketio.server")
         log = cat_config.setup_logger(log_path=self._path())
         log.handlers += socketio_logger.handlers
@@ -275,8 +295,7 @@ class Work(Process):
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             log.error(msg)
-        for fp in glob.iglob(self._path("*.zip")):
-            os.remove(fp)
+        self._backup_files()
         target = self.current_args()
         if target and not self._path_islink("tasks" + target):
             os.symlink(self._path("tasks"), self._path("tasks" + target))

@@ -1,6 +1,6 @@
 WEB_USER = www-data
 WEB_GROUP = www-data
-WEB_DIR = /var/www/html/results
+WORK_DIR = /var/catastro
 
 .PHONY: help
 help:  ## Show this help
@@ -9,10 +9,10 @@ help:  ## Show this help
 
 .PHONY: install
 install:
-	@if [ ! -d "$(WEB_DIR)" ]; then \
-	    mkdir -p "$(WEB_DIR)" && \
-	    chmod 775 "$(WEB_DIR)" && \
-	    chown -R $(WEB_USER):$(WEB_GROUP) "$(WEB_DIR)"; \
+	@if [ ! -d "$(WORK_DIR)" ]; then \
+	    mkdir -p "$(WORK_DIR)" && \
+	    chmod 775 "$(WORK_DIR)" && \
+	    chown -R $(WEB_USER):$(WEB_GROUP) "$(WORK_DIR)"; \
 	fi
 
 .PHONY: catatom2osm

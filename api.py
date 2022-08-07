@@ -16,7 +16,6 @@ import user
 from work import Work, check_owner
 
 
-WORK_DIR = os.environ['HOME']
 app = Flask(__name__, instance_relative_config=True)
 mode = app.config.get("ENV", "development")
 app.config.from_object(get_config(mode))
@@ -45,6 +44,12 @@ status_msg = {
         502, "Terminó con error"
     ),
 }
+
+APP_DIR = os.environ['HOME']
+for fn in ['results', 'backup', 'cache']:
+    p = os.path.join(APP_DIR, fn)
+    if not os.path.exists(p):
+        os.mkdir(p)
 
 class Login(Resource):
     def get(self):
