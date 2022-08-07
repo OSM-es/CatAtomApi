@@ -159,8 +159,6 @@ class Work(Process):
             cached = os.path.join(CACHE_DIR, fp)
             if os.path.exists(cached):
                 shutil.copy(cached, self._path(fp))
-            elif self._path_exists(fp):
-                shutil.copy(self._path(fp), cached)
 
     def _backup_files(self):
         for fp in glob.iglob(self._path("*.zip")):
@@ -286,7 +284,7 @@ class Work(Process):
         log.app_level = logging.INFO
         cat_config.set_config(dict(language=self.idioma))
         with open(self._path("user.json"), "w") as fo:
-            fo.write(json.dumps(self.user))
+            json.dump(self.user, fo)
         try:
             qgs = QgsSingleton()
             os.chdir(self._path())
@@ -327,7 +325,7 @@ class Work(Process):
     def get_highway_name(self, street):
         if self._path_exists("address.geojson"):
             with open(self._path("address.geojson"), "r") as fo:
-                data = json.loads(fo.read())
+                data = json.load(fo)
             if street:
                 filtered = [
                     feat for feat in data['features']
@@ -363,7 +361,7 @@ class Work(Process):
     def report_json(self):
         if self._path_exists("report.json"):
             with open(self._path("report.json"), "r") as fo:
-                report = json.loads(fo.read())
+                report = json.load(fo)
             report.pop("min_level", None)
             report.pop("max_level", None)
             return report
@@ -411,3 +409,16 @@ class Work(Process):
             "cod_municipio": self.mun_code,
             "divisiones": divisiones,
         }
+
+    def chat(self):
+        chat = []
+        if self._path_exists("chat.json"):
+            with open(self._path("chat.json"), "r") as fo:
+                chat = json.load(fo)
+        return chat
+
+    def add_message(self, msg):
+        chat = self.chat()
+        chat.append(msg)
+        with open(self._path("chat.json"), "w") as fo:
+            json.dump(chat, fo)

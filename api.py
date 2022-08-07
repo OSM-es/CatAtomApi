@@ -148,6 +148,8 @@ class Job(Resource):
             data["revisar"] = job.review()
         if status == Work.Status.DONE:
             data["next_args"] = job.next_args() or ""
+        if status != Work.Status.RUNNING:
+            data["charla"] = job.chat()
         return data
 
     @user.auth.login_required
@@ -302,7 +304,10 @@ def handle_disconnect():
 
 @socketio.on("chat")
 def handle_send(data):
-    socketio.emit("chat", data, to=data["room"])
+    room = data["room"]
+    job = Work.validate(room)
+    job.add_message(data)
+    socketio.emit("chat", data, to=room)
 
 @socketio.on("join")
 def on_join(data):
