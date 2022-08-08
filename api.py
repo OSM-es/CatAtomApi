@@ -228,15 +228,21 @@ class Highway(Resource):
 class Fixme(Resource):
 
     @user.auth.login_required
-    def post(self, mun_code):
+    def get(self, mun_code, fixme):
         job = Work.validate(mun_code)
-        filename = request.json["filename"]
-        status = job.lock_fixme(filename)
+        status = job.lock_fixme(fixme)
         socketio.emit("fixme", status, to=mun_code)
         return status
 
     @user.auth.login_required
-    def put(self, mun_code):
+    def post(self, mun_code, fixme):
+        job = Work.validate(mun_code)
+        status = job.unlock_fixme(fixme)
+        socketio.emit("fixme", status, to=mun_code)
+        return status
+
+    @user.auth.login_required
+    def put(self, mun_code, fixme):
         job = Work.validate(mun_code)
         file = request.files["file"]
         try:
@@ -271,20 +277,25 @@ class Export(Resource):
             abort(404, message="Proceso no encontrado")
 
 
-api.add_resource(Login,'/login')
-api.add_resource(Authorize,'/authorize')
-api.add_resource(Provinces,'/prov')
-api.add_resource(Province,'/prov/<string:prov_code>')
-api.add_resource(Municipality,'/mun/<string:mun_code>')
+api.add_resource(Login, '/login')
+api.add_resource(Authorize, '/authorize')
+api.add_resource(Provinces, '/prov')
+api.add_resource(Province, '/prov/<string:prov_code>')
+api.add_resource(Municipality, '/mun/<string:mun_code>')
 api.add_resource(
     Job,
     '/job/<string:mun_code>',
     '/job/<string:mun_code>/',
     '/job/<string:mun_code>/<string:split>',
 )
-api.add_resource(Highway,'/hgw/<string:mun_code>')
-api.add_resource(Fixme,'/fixme/<string:mun_code>')
-api.add_resource(Export,'/export/<string:mun_code>')
+api.add_resource(Highway, '/hgw/<string:mun_code>')
+api.add_resource(
+    Fixme,
+    '/fixme/<string:mun_code>',
+    '/fixme/<string:mun_code>/',
+    '/fixme/<string:mun_code>/<string:fixme>',
+)
+api.add_resource(Export, '/export/<string:mun_code>')
 
 @app.route("/")
 def hello_world():

@@ -167,6 +167,14 @@ class Work(Process):
             shutil.move(fp, backup)
             if self.status() == Work.Status.DONE and os.path.exists(cached):
                 os.remove(cached)
+        if self._path_exists("review.txt"):
+            self._path_create('backup')
+            shutil.copy(self._path('review.txt'), self._path('backup'))
+            review = csv2dict(self._path("review.txt"))
+            for fixme in review.keys():
+                src = self._path('tasks', fixme + '.osm.gz')
+                dst = self._path('backup', fixme + '.osm.gz')
+                shutil.copy(src, dst)
 
     def lock_fixme(self, filename):
         fn = self._path("review.txt")
@@ -181,6 +189,22 @@ class Work(Process):
                 g.user_data["username"],
                 "true",
             ]
+            review[taskname] = fixme
+            dict2csv(fn, review)
+        return self._get_fixme_dict(taskname, fixme)
+
+    def unlock_fixme(self, filename):
+        fn = self._path("review.txt")
+        review = csv2dict(fn)
+        review_bck = csv2dict(self._path("backup", "review.txt"))
+        taskname = filename.split(".")[0]
+        fixme = []
+        if taskname in review:
+            src = self._path('backup', taskname + '.osm.gz')
+            dst = self._path('tasks', taskname + '.osm.gz')
+            shutil.copy(src, dst)
+            fixmes = review_bck[taskname][0]
+            fixme = [str(fixmes)]
             review[taskname] = fixme
             dict2csv(fn, review)
         return self._get_fixme_dict(taskname, fixme)
