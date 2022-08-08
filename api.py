@@ -208,9 +208,16 @@ class Job(Resource):
 class Highway(Resource):
 
     def get(self, mun_code):
+        """Devuelve direcciones de la calle"""
         street = request.args.get('street', '')
         job = Work.validate(mun_code, socketio=socketio)
         return job.get_highway_name(street)
+
+    @user.auth.login_required
+    def post(self, mun_code):
+        """Restaura una entrada del callejero"""
+        job = Work.validate(mun_code, socketio=socketio)
+        return job.undo_highway_name(request.json)
 
     @user.auth.login_required
     def put(self, mun_code):

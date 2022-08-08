@@ -167,9 +167,12 @@ class Work(Process):
             shutil.move(fp, backup)
             if self.status() == Work.Status.DONE and os.path.exists(cached):
                 os.remove(cached)
+        if self._path_exists("highway_names.csv"):
+            self._path_create("backup")
+            shutil.copy(self._path("highway_names.csv"), self._path("backup"))
         if self._path_exists("review.txt"):
-            self._path_create('backup')
-            shutil.copy(self._path('review.txt'), self._path('backup'))
+            self._path_create("backup")
+            shutil.copy(self._path("review.txt"), self._path("backup"))
             review = csv2dict(self._path("review.txt"))
             for fixme in review.keys():
                 src = self._path('tasks', fixme + '.osm.gz')
@@ -358,6 +361,20 @@ class Work(Process):
                 data['features'] = filtered
             return data
         return {}
+
+    def undo_highway_name(self, data):
+        if self._path_exists("highway_names.csv"):
+            fn = self._path("highway_names.csv")
+            hgwnames = csv2dict(fn)
+            hgwnames_bck = csv2dict(self._path("backup", "highway_names.csv"))
+            cat = data["cat"]
+            conv = data["conv"]
+            hgwnames[cat] = hgwnames_bck[cat]
+            data["conv"] = hgwnames[cat][0]
+            dict2csv(fn, hgwnames)
+        print(hgwnames_bck[cat])
+        return data
+        
 
     def update_highway_name(self, data):
         if self._path_exists("highway_names.csv"):
