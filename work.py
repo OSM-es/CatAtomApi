@@ -154,24 +154,25 @@ class Work(Process):
         return rows, i
 
     def _read_cache(self):
-        for t in ['AD', 'BU', 'CP']:
-            fp = f"A.ES.SDGC.{t}.{self.mun_code}.zip"
-            cached = os.path.join(CACHE_DIR, fp)
-            if os.path.exists(cached):
-                shutil.copy(cached, self._path(fp))
+        self._path_create()
+        cache = os.path.join(CACHE_DIR, self.mun_code)
+        if self.status() == Work.Status.AVAILABLE and os.path.exists(cache):
+            shutil.copytree(cache, self.path, dirs_exist_ok=True)
 
     def _backup_files(self):
+        backup = os.path.join(BACKUP_DIR, self.mun_code)
+        if not os.path.exists(backup):
+            os.mkdir(backup)
         for fp in glob.iglob(self._path("*.zip")):
-            backup = os.path.join(BACKUP_DIR, os.path.basename(fp))
-            cached = os.path.join(CACHE_DIR, os.path.basename(fp))
-            shutil.move(fp, backup)
-            if self.status() == Work.Status.DONE and os.path.exists(cached):
-                os.remove(cached)
+            fn = os.path.basename(fp)
+            shutil.move(fp, os.path.join(backup, fn))
+        if self.status() != Work.Status.ERROR:
+            cache = os.path.join(CACHE_DIR, self.mun_code)
+            shutil.rmtree(cache, ignore_errors=True)
+        self._path_create("backup")
         if self._path_exists("highway_names.csv"):
-            self._path_create("backup")
             shutil.copy(self._path("highway_names.csv"), self._path("backup"))
         if self._path_exists("review.txt"):
-            self._path_create("backup")
             shutil.copy(self._path("review.txt"), self._path("backup"))
             review = csv2dict(self._path("review.txt"))
             for fixme in review.keys():
@@ -294,8 +295,7 @@ class Work(Process):
         return ""
 
     def run(self):
-        mun_code = self.mun_code
-        self._path_create()
+        self._read_cache()
         if self.last_args():
             src = self._path("tasks")
             dst = self._path("tasks" + self.last_args())
@@ -303,7 +303,6 @@ class Work(Process):
             os.rename(src, dst)
         self._path_remove("catatom2osm.log")
         self._path_remove("report.txt")
-        self._read_cache()
         socketio_logger = logging.getLogger("socketio.server")
         log = cat_config.setup_logger(log_path=self._path())
         log.handlers += socketio_logger.handlers
@@ -320,10 +319,10 @@ class Work(Process):
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             log.error(msg)
-        self._backup_files()
         target = self.current_args()
         if target and not self._path_islink("tasks" + target):
             os.symlink(self._path("tasks"), self._path("tasks" + target))
+        self._backup_files()
 
     def status(self):
         if self._path_exists() and self._path_exists("user.json"):

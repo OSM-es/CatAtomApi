@@ -1,5 +1,5 @@
 # CatAtomApi
-Diseño de una API web para interactuar con catatom2osm
+API web para interactuar con catatom2osm
 
 ## Requisitos
 Docker https://www.docker.com/get-started
@@ -20,4 +20,5 @@ Para otros usos ver el Makefile
 Ver [doc_api.md](doc_api.md)
 
 ## Producción
+Crear carpeta /var/catastro con propietario www-data:www-data
 Crear api.env siguiendo instrucciones de config.py
