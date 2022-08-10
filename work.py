@@ -78,6 +78,7 @@ class Work(Process):
             comment=False,
             config_file=False,
             download=False,
+            info=False,
             generate_config=False,
             manual=False,
             zoning=False,
@@ -326,11 +327,13 @@ class Work(Process):
 
     def status(self):
         if self._path_exists() and self._path_exists("user.json"):
-            if self._path_exists("catatom2osm.log"):
+            try:
                 with open(self._path("catatom2osm.log"), "r") as fo:
                     log = fo.read()
                     if "ERROR" in log:
                         return Work.Status.ERROR
+            except FileNotFoundError:
+                pass
             if self._path_exists("report.txt"):
                 if self._path_exists("highway_names.csv"):
                     return Work.Status.REVIEW
@@ -456,6 +459,15 @@ class Work(Process):
             with open(self._path("chat.json"), "r") as fo:
                 chat = json.load(fo)
         return chat
+
+    def info(self):
+        info = None
+        fn = f"info_{self.split}.json" if self.split else "info.json"
+        fp = os.path.join(CACHE_DIR, self.mun_code, fn)
+        if os.path.exists(fp):
+            with open(fp, "r") as fo:
+                info = json.load(fo)
+        return info
 
     def add_message(self, msg):
         chat = self.chat()

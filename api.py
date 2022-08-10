@@ -136,6 +136,7 @@ class Job(Resource):
             "report": {},
             "revisar": [],
             "callejero": [],
+            "info": None,
         }
         if status != Work.Status.AVAILABLE and status != Work.Status.RUNNING: 
             data["informe"] = job.report()
@@ -150,6 +151,8 @@ class Job(Resource):
             data["next_args"] = job.next_args() or ""
         if status != Work.Status.RUNNING:
             data["charla"] = job.chat()
+        if status == Work.Status.AVAILABLE:
+            data["info"] = job.info()
         return data
 
     @user.auth.login_required
