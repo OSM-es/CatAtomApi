@@ -60,14 +60,14 @@ class Work(Process):
         split=None,
         building=True,
         address=True,
-        idioma="es_ES",
+        config={},
         socketio=None,
     ):
         super(Work, self).__init__()
         self.mun_code = mun_code
         self.user = user
         self.split = split
-        self.idioma = idioma
+        self.config = config
         self.socketio = socketio
         self.path = os.path.join(WORK_DIR, self.mun_code)
         self.options = argparse.Namespace(
@@ -309,7 +309,7 @@ class Work(Process):
         log.handlers += socketio_logger.handlers
         log.setLevel(logging.INFO)
         log.app_level = logging.INFO
-        cat_config.set_config(dict(language=self.idioma))
+        cat_config.set_config(self.config)
         with open(self._path("user.json"), "w") as fo:
             json.dump(self.user, fo)
         try:
@@ -374,7 +374,6 @@ class Work(Process):
             hgwnames[cat] = hgwnames_bck[cat]
             data["conv"] = hgwnames[cat][0]
             dict2csv(fn, hgwnames)
-        print(hgwnames_bck[cat])
         return data
         
 

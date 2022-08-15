@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -13,6 +14,7 @@ cat_config.get_user_config('catconfig.yaml')
 from catatom2osm import csvtools
 
 import user
+import schema
 from work import Work, check_owner
 
 
@@ -110,10 +112,7 @@ class Municipality(Resource):
 
 class Job(Resource):
     def __init__(self):
-        self.post_parser = reqparse.RequestParser()
-        self.post_parser.add_argument("building", type=bool, default=True)
-        self.post_parser.add_argument("address", type=bool, default=True)
-        self.post_parser.add_argument("idioma", type=str, default="es_ES")
+        self.post_parser = schema.JobSchema()
 
     def get(self, mun_code, split=None):
         """Estado del proceso de un municipio."""
@@ -159,7 +158,8 @@ class Job(Resource):
     @check_owner
     def post(self, mun_code, split=None):
         """Procesa un municipio."""
-        args = self.post_parser.parse_args()
+        data = json.loads(request.data)
+        args = self.post_parser.load(data)
         job = Work.validate(mun_code, split, **args, socketio=socketio)
         status = job.status()
         if (
