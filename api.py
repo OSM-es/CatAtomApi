@@ -205,6 +205,8 @@ class Job(Resource):
             "report": [],
             "revisar": [],
             "callejero": [],
+            "info": job.info(),
+
         }
 
 

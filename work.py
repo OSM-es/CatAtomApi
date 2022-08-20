@@ -167,9 +167,6 @@ class Work(Process):
         for fp in glob.iglob(self._path("A.ES.SDGC.??.?????.zip")):
             fn = os.path.basename(fp)
             shutil.move(fp, os.path.join(backup, fn))
-        if self.status() != Work.Status.ERROR:
-            cache = os.path.join(CACHE_DIR, self.mun_code)
-            shutil.rmtree(cache, ignore_errors=True)
         self._path_create("backup")
         if self._path_exists("highway_names.csv"):
             shutil.copy(self._path("highway_names.csv"), self._path("backup"))
