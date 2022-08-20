@@ -164,7 +164,7 @@ class Work(Process):
         backup = os.path.join(BACKUP_DIR, self.mun_code)
         if not os.path.exists(backup):
             os.mkdir(backup)
-        for fp in glob.iglob(self._path("*.zip")):
+        for fp in glob.iglob(self._path("A.ES.SDGC.??.?????.zip")):
             fn = os.path.basename(fp)
             shutil.move(fp, os.path.join(backup, fn))
         if self.status() != Work.Status.ERROR:
