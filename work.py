@@ -437,6 +437,9 @@ class Work(Process):
 
     def splits(self):
         self._path_create()
+        fp = os.path.join(CACHE_DIR, self.mun_code, "splits.json")
+        if not self._path_exists("splits.json") and os.path.exists(fp):
+            shutil.copy(fp, self._path())
         if self._path_exists("splits.json"):
             with open(self._path("splits.json"), "r") as fo:
                 divisiones = json.load(fo)
