@@ -87,9 +87,9 @@ class Work(Process):
             parcel=[],
             log_level='INFO',
         )
-        self.options.args = self.current_args() + mun_code
-        if self.split:
-            self.options.args += f"-s {self.split}"
+        self.options.args = self.current_args()
+        self.options.args += (" " if self.options.args else "") + mun_code
+        self.options.args += f" -s {self.split}" if self.split else ""
         self.osm_id, self.name = boundary.get_municipality(mun_code)
 
     @staticmethod
