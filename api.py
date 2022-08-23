@@ -240,21 +240,26 @@ class Highway(Resource):
 class Fixme(Resource):
 
     @user.auth.login_required
-    def get(self, mun_code, fixme):
+    def get(self, mun_code):
+        """Bloquea el fixme por un usuario"""
         job = Work.validate(mun_code)
+        fixme = request.args.get('fixme')
         status = job.lock_fixme(fixme)
         socketio.emit("fixme", status, to=mun_code)
         return status
 
     @user.auth.login_required
-    def post(self, mun_code, fixme):
+    def post(self, mun_code):
+        """Desbloquea el fixme"""
         job = Work.validate(mun_code)
+        fixme = request.json.get('fixme')
         status = job.unlock_fixme(fixme)
         socketio.emit("fixme", status, to=mun_code)
         return status
 
     @user.auth.login_required
-    def put(self, mun_code, fixme):
+    def put(self, mun_code):
+        """Recarga archivo de fixme"""
         job = Work.validate(mun_code)
         file = request.files["file"]
         try:
@@ -270,11 +275,13 @@ class Fixme(Resource):
 
     @user.auth.login_required
     @check_owner
-    def delete(self, mun_code):
-        job = Work.validate(mun_code)
+    def delete(self, mun_code, split=None):
+        """Marca revisión como completada si no quedan fixmes"""
+        job = Work.validate(mun_code, split=split)
         job.clear_fixmes()
         data = dict(**g.user_data, room=mun_code)
         socketio.emit("done", data, to=mun_code)
+        return Job().get(mun_code, split)
 
 
 class Export(Resource):
@@ -305,7 +312,7 @@ api.add_resource(
     Fixme,
     '/fixme/<string:mun_code>',
     '/fixme/<string:mun_code>/',
-    '/fixme/<string:mun_code>/<string:fixme>',
+    '/fixme/<string:mun_code>/<string:split>',
 )
 api.add_resource(Export, '/export/<string:mun_code>')
 

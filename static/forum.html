@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/bulma@0.9.0/css/bulma.min.css" />
+    </head>
+    <body>
+        <nav class="navbar">
+            <div class="container">
+                <div class="navbar-brand content">
+                    <a class="navbar-item" href="../">
+                        <img src="cat_files/Spanish_Cadastre_Buildings_Import.svg" style="max-height: 6em;">
+                    </a>
+                    <h2 class="navbar-item">CatAtom2Osm online</h2>
+                </div>
+                <div id="topNav" class="navbar-menu">
+                    <div class="navbar-start">
+                    </div>
+                    <div class="navbar-end">
+                        <div class="navbar-item">
+                            <div class="field is-grouped">
+                                <p class="navbar-item">
+                                    Javier Sánchez (imports)
+                                </p>
+                                <p class="control">
+                                    <a class="button is-info is-outlined">
+                                        <span class="icon">
+                                            <i class="fa fa-user-times"></i>
+                                        </span>
+                                        <span>Cerrar sesión</span>
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <section class="container">
+            <article class="message is-warning">
+                <div class="message-header">
+                    <p>
+                        <span class="icon has-text">
+                            <i class="fa fa-exclamation-triangle"></i>
+                        </span>
+                        <span>Aviso</span>
+                    </p>
+                    <button class="delete" aria-label="delete"></button>
+                </div>
+                <div class="message-body">
+                  <p>Las importaciones y ediciones automatizadas deben ser llevadas a cabo por personas con experiencia y suficiente conocimiento de la forma en que la comunidad OpenStreetMap crea mapas y con una cuidada planificación y consulta con la comunidad local correspondiente.</p>
+                  <p>Consulta la <a href="https://wiki.openstreetmap.org/wiki/ES:Catastro_espa%C3%B1ol/Importaci%C3%B3n_de_edificios/Gesti%C3%B3n_de_proyectos">guía de importación</a>. Las importaciones o ediciones automatizadas que no sigan estas directrices ¡se pueden revertir!</p>
+                </div>
+            </article>
+            <div class="columns">
+                <div class="column">
+                </div>
+                <div class="column is-third">
+                    <div class="box">
+                        <div class="field">
+                          <div class="control">
+                            <div class="select is-fullwidth">
+                              <select>
+                                <option>Selecciona la provincia...</option>
+                                <option>02 Albacete</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="field">
+                          <div class="control">
+                            <div class="select is-fullwidth">
+                              <select>
+                                <option>Selecciona el municipio...</option>
+                                <option>02001 Albengibre</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                </div>
+            </div>
+            <div class="columns">
+                <div class="column is-third">
+                    <nav class="panel is-info">
+                        <p class="panel-heading">
+                            1. Procesar
+                        </p>
+                        <div class="panel-block">
+                            <div class="container">
+                                <label class="label">Opciones</label>
+                                <div class="checkbox">
+                                  <label class="checkbox">
+                                    <input type="checkbox" checked>
+                                    Procesar edificios
+                                  </label>
+                                  <br/>
+                                  <label class="checkbox">
+                                    <input type="checkbox" checked>
+                                    Procesar direcciones
+                                  </label>
+                                </div>
+                                <div class="field">
+                                  <label class="label">Idioma</label>
+                                  <div class="control">
+                                    <div class="select is-fullwidth">
+                                      <select>
+                                        <option>Español</option>
+                                        <option>Catalá</option>
+                                        <option>Galego</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="panel-block">
+                            <div class="field">
+                              <label class="label">Estado</label>
+                              <div class="control">
+                                No procesado
+                              </div>
+                            </div>
+                        </div>
+                        <div class="panel-block">
+                            <button class="button is-link is-outlined is-fullwidth">
+                                Procesar
+                            </button>
+                        </div>
+                    </nav>
+                </div>
+                <div class="column is-third">
+                    <nav class="panel">
+                        <p class="panel-heading">
+                            2. Corregir
+                        </p>
+                        <div class="panel-block">
+                            <p>Edita los nombres de las calles mostrados en el panel inferior siguiendo estas <a href="https://wiki.openstreetmap.org/wiki/ES:Catastro_espa%C3%B1ol/Importaci%C3%B3n_de_edificios/Gesti%C3%B3n_de_proyectos#Revisi%C3%B3n_de_nombres_de_calles">instrucciones</a>. Cuando termines repite el paso anterior.</p>
+                        </div>
+                        <div class="panel-block">
+                            <p>Edita con JOSM los archivos mostrados en el panel inferior siguiendo estas <a href="https://wiki.openstreetmap.org/wiki/ES:Catastro_espa%C3%B1ol/Importaci%C3%B3n_de_edificios/Gesti%C3%B3n_de_proyectos#Generar_y_corregir_los_archivos_a_importar">instrucciones</a>. Cuando no queden etiquetas fixme podrás pasar al siguiente paso.</p>
+                        </div>
+                    </nav>
+                </div>
+                <div class="column is-third">
+                    <nav class="panel">
+                        <p class="panel-heading">
+                            3. Publicar
+                        </p>
+                        <div class="panel-block">
+                            <article class="post">
+                              <p>Crea un nuevo proyecto en el Gestor de tareas usando el archivo <a href="">zoning.geojson</a>.</p>
+                              <p>Completa los campos necesarior siguiendo la plantilla mostrada en el panel inferior.</p>
+                              <p>Ver el <a href="">resultado del proceso</a></p>
+                            </article>
+                        </div>
+                        <div class="panel-block">
+                            <button class="button is-link is-outlined is-fullwidth">
+                                Descargar
+                            </button>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </section>
+        <section class="container">
+<br/>
+<div id="accordion">
+    <nav class="panel">
+        <p class="panel-heading">
+            Revisar
+		    <a href="#collapsible-message-accordion-1" data-action="collapse" aria-label="more options">
+			    <span class="icon">
+				    <i class="fa fa-angle-down" aria-hidden="true"></i>
+			    </span>
+		    </a>
+        </p>
+        <div id="collapsible-message-accordion-1" class="is-collapsible" data-parent="accordion" data-allow-multiple="true">
+            <div class="panel-block">
+                <div class="container">
+                    <nav class="level">
+                        <div class="level-left">
+                            <div class="level-item">
+                              <p><a href="">5912601XJ2451S.osm.gz</a> (<a href="">abrir en JOSM</a>)</p>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item file is-small">
+                              <label class="file-label">
+                                <input class="file-input" type="file" name="resume">
+                                <span class="file-cta">
+                                  <span class="file-icon">
+                                    <i class="fa fa-upload"></i>
+                                  </span>
+                                  <span class="file-label">
+                                    Seleccionar archivo corregido
+                                  </span>
+                                </span>
+                              </label>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+            <div class="panel-block">
+                <div class="container">
+                    <nav class="level">
+                        <div class="level-left">
+                            <div class="level-item">
+                              <p><a href="">5812117XJ2451S.osm.gz</a> (<a href="">abrir en JOSM</a>)</p>
+                            </div>
+                        </div>
+                        <div class="level-right">
+                            <div class="level-item file is-small">
+                              <label class="file-label">
+                                <input class="file-input" type="file" name="resume">
+                                <span class="file-cta">
+                                  <span class="file-icon">
+                                    <i class="fa fa-upload"></i>
+                                  </span>
+                                  <span class="file-label">
+                                    Seleccionar archivo corregido
+                                  </span>
+                                </span>
+                              </label>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <article class="message">
+        <div class="message-header">
+            <p>Question 2 <a href="#collapsible-message-accordion-2" data-action="collapse">Collapse/Expand</a></p>
+        </div>
+        <div id="collapsible-message-accordion-2" class="message-body is-collapsible" data-parent="accordion" data-allow-multiple="true">
+            <div class="message-body-content">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. <strong>Pellentesque risus mi</strong>, tempus quis
+                placerat ut, porta nec nulla. Vestibulum rhoncus ac ex sit amet fringilla. Nullam gravida purus diam, et dictum
+                <a>felis venenatis</a> efficitur. Aenean ac <em>eleifend lacus</em>, in mollis lectus. Donec sodales, arcu et
+                sollicitudin porttitor, tortor urna tempor ligula, id porttitor mi magna a neque. Donec dui urna, vehicula et
+                sem eget, facilisis sodales sem.
+            </div>
+        </div>
+    </article>
+    <article class="message">
+        <div class="message-header">
+            <p>Question 3 <a href="#collapsible-message-accordion-3" data-action="collapse">Collapse/Expand</a></p>
+        </div>
+        <div id="collapsible-message-accordion-3" class="message-body is-collapsible" data-parent="accordion" data-allow-multiple="true">
+            <div class="message-body-content">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. <strong>Pellentesque risus mi</strong>, tempus quis
+                placerat ut, porta nec nulla. Vestibulum rhoncus ac ex sit amet fringilla. Nullam gravida purus diam, et dictum
+                <a>felis venenatis</a> efficitur. Aenean ac <em>eleifend lacus</em>, in mollis lectus. Donec sodales, arcu et
+                sollicitudin porttitor, tortor urna tempor ligula, id porttitor mi magna a neque. Donec dui urna, vehicula et
+                sem eget, facilisis sodales sem.
+            </div>
+        </div>
+    </article>
+</div>
+        </section>
+    </body>
+</html>
+

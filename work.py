@@ -246,7 +246,8 @@ class Work(Process):
         fn = self._path("review.txt")
         review = csv2dict(fn)
         if sum([int(fixme[0]) for fixme in review.values()]) == 0:
-            os.rename(self._path("review.txt"), self._path("review.txt.bak"))
+            shutil.copy(fn, self._path("tasks", self.split or ''))
+            os.remove(fn)
 
     def export(self):
         if self._path_exists("tasks"):

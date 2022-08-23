@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  </head>
+  <body class="body">
+
+    <p><a href="javascript:desbloquear();">Desbloquear</a></p>
+
+    <script>
+function desbloquear() {
+    let url = '/prueba';
+    let data = {
+        building: true,
+        address: false,
+    };
+
+    console.log(url, data);
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+        .then(Result => {
+            console.log("1then");
+            console.log(Result);
+            return Result.json();
+        })
+        .then(string => {
+            console.log(string);
+        })
+        .catch(errorMsg => { console.log(errorMsg); });
+}
+    </script>
+  </body>
+</html>
