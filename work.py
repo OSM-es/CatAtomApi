@@ -267,10 +267,10 @@ class Work(Process):
             shutil.move(fp, target)
 
     def export(self):
-        if self._path_exists("tasks"):
+        if self._path_exists(self.target_dir, self.tasks_dir):
+            tasks = "/".join([self.mun_code, self.target_dir, self.tasks_dir])
             tmpfo, tmpfn = mkstemp()
-            tasks = self._path("tasks")
-            return shutil.make_archive(tmpfn, "zip", tasks)
+            return shutil.make_archive(tmpfn, "zip", WORK_DIR, tasks)
 
     def watch_log(self, user_data):
         while self.status != Work.Status.RUNNING:

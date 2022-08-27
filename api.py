@@ -232,10 +232,13 @@ class Fixme(Resource):
 
 
 class Export(Resource):
+    def __init__(self):
+        self.parser = schema.JobSchema()
 
-    def get(self, mun_code):
+    def get(self, mun_code, split=None):
         """Exporta carpeta de tareas"""
-        job = Work.validate(mun_code)
+        args = self.parser.load(request.args)
+        job = Work.validate(mun_code, split, **args)
         data = job.export()
         if data:
             return send_file(data, download_name=mun_code + ".zip")
@@ -261,7 +264,12 @@ api.add_resource(
     '/fixme/<string:mun_code>/',
     '/fixme/<string:mun_code>/<string:split>',
 )
-api.add_resource(Export, '/export/<string:mun_code>')
+api.add_resource(
+    Export,
+    '/export/<string:mun_code>',
+    '/export/<string:mun_code>/',
+    '/export/<string:mun_code>/<string:split>',
+)
 
 @app.route("/")
 def hello_world():
