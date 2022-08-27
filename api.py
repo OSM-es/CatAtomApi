@@ -154,11 +154,12 @@ class Job(Resource):
         __ = request.data  # https://github.com/pallets/flask/issues/4546
         args = self.parser.load(request.args)
         job = Work.validate(mun_code, split, **args)
-        data = dict(**g.user_data, room=mun_code)
-        socketio.emit("deleteJob", data, to=mun_code)
         job.delete()
         job = Work(mun_code)
-        return job.get_dict("Proceso eliminado correctamente")
+        data = dict(**g.user_data, room=mun_code)
+        data["job"] = job.get_dict("Proceso eliminado correctamente")
+        socketio.emit("deleteJob", data, to=mun_code)
+        return data["job"]
 
 
 class Highway(Resource):

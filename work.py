@@ -273,18 +273,21 @@ class Work(Process):
             return shutil.make_archive(tmpfn, "zip", WORK_DIR, tasks)
 
     def watch_log(self, user_data):
+        data = dict(user_data)
         while self.status != Work.Status.RUNNING:
             pass
         while self.status == Work.Status.RUNNING:
-            log = self.log
+            data["job"] = self.get_dict()
+            log = data["job"]["log"]
             if len(log) > 0:
-                self.socketio.emit("updateJob", user_data, to=self.mun_code)
+                self.socketio.emit("updateJob", data, to=self.mun_code)
             self.socketio.sleep(0.5)
-        log = self.log
+        data["job"] = self.get_dict()
+        log = data["job"]["log"]
         if len(log) > 0:
-            self.socketio.emit("updateJob", user_data, to=self.mun_code)
+            self.socketio.emit("updateJob", data, to=self.mun_code)
         if self.status == Work.Status.DONE:
-            self.socketio.emit("done", to=self.mun_code)
+            self.socketio.emit("done", data, to=self.mun_code)
 
     @property
     def current_args(self):
