@@ -60,6 +60,7 @@ class Work(Process):
         split=None,
         building=True,
         address=True,
+        linea=0,
         config={},
         socketio=None,
     ):
@@ -67,6 +68,7 @@ class Work(Process):
         self.mun_code = mun_code
         self.user = user
         self.split = split
+        self.linea = linea
         self.config = config
         self.socketio = socketio
         self.path = os.path.join(WORK_DIR, self.mun_code)
@@ -87,9 +89,12 @@ class Work(Process):
             parcel=[],
             log_level='INFO',
         )
-        self.options.args = self.current_args()
-        self.options.args += (" " if self.options.args else "") + mun_code
-        self.options.args += f" -s {self.split}" if self.split else ""
+        self.options.args = self.current_args
+        self.options.args += (" " if self.options.args else "") +  mun_code
+        self.report = self.search_report()
+        self.get_options_from_report(self.report)
+        if self.split:
+            self.options.args += f" -s {self.split}"
         self.osm_id, self.name = boundary.get_municipality(mun_code)
 
     @staticmethod
@@ -139,11 +144,8 @@ class Work(Process):
             return True
         return False
 
-    def _path_islink(self, *args):
-        return os.path.islink(self._path(*args))
-
-    def _get_file(self, filename, from_row=0):
-        fn = self._path(filename)
+    def _get_file(self, *args, from_row=0):
+        fn = self._path(*args)
         rows = []
         i = 0
         if os.path.exists(fn):
@@ -157,7 +159,7 @@ class Work(Process):
     def _read_cache(self):
         self._path_create()
         cache = os.path.join(CACHE_DIR, self.mun_code)
-        if self.status() == Work.Status.AVAILABLE and os.path.exists(cache):
+        if self.status == Work.Status.AVAILABLE and os.path.exists(cache):
             shutil.copytree(cache, self.path, dirs_exist_ok=True)
 
     def _backup_files(self):
@@ -174,9 +176,22 @@ class Work(Process):
             shutil.copy(self._path("review.txt"), self._path("backup"))
             review = csv2dict(self._path("review.txt"))
             for fixme in review.keys():
-                src = self._path('tasks', fixme + '.osm.gz')
+                src = self._path(self.target_dir, self.tasks_dir, fixme + '.osm.gz')
                 dst = self._path('backup', fixme + '.osm.gz')
                 shutil.copy(src, dst)
+
+    def get_options_from_report(self, data):
+        options = data.get("options", False)
+        if options:
+            if options.startswith("-b "):
+                self.options.building = True
+                self.options.address = False
+            elif options.startswith("-d "):
+                self.options.building = False
+                self.options.address = True
+            else:
+                self.options.building = True
+                self.options.address = True
 
     def lock_fixme(self, filename):
         fn = self._path("review.txt")
@@ -203,7 +218,7 @@ class Work(Process):
         fixme = []
         if taskname in review:
             src = self._path('backup', taskname + '.osm.gz')
-            dst = self._path('tasks', taskname + '.osm.gz')
+            dst = self._path(self.target_dir, self.tasks_dir, taskname + '.osm.gz')
             shutil.copy(src, dst)
             fixmes = review_bck[taskname][0]
             fixme = [str(fixmes)]
@@ -229,7 +244,8 @@ class Work(Process):
         review = csv2dict(fn)
         taskname = filename.split(".")[0]
         if filename.endswith(".gz") and taskname in review:
-            shutil.copyfile(tmpfn, self._path("tasks", filename))
+            target = self._path(self.target_dir, self.tasks_dir, filename)
+            shutil.copyfile(tmpfn, target)
             os.remove(tmpfn)
             fixmes = 0
             for el in data.elements:
@@ -243,33 +259,34 @@ class Work(Process):
         return "notfound"
 
     def clear_fixmes(self):
-        fn = self._path("review.txt")
-        review = csv2dict(fn)
+        fp = self._path("review.txt")
+        target = self._path(self.target_dir, self.tasks_dir, "review.txt")
+        review = csv2dict(fp)
         if sum([int(fixme[0]) for fixme in review.values()]) == 0:
-            shutil.copy(fn, self._path("tasks", self.split or ''))
-            os.remove(fn)
+            os.rename(target, target + ".bak")
+            shutil.move(fp, target)
 
     def export(self):
         if self._path_exists("tasks"):
-            tmpfo, tmpfn = mkstemp();
+            tmpfo, tmpfn = mkstemp()
             tasks = self._path("tasks")
             return shutil.make_archive(tmpfn, "zip", tasks)
 
     def watch_log(self, user_data):
-        while self.status() != Work.Status.RUNNING:
+        while self.status != Work.Status.RUNNING:
             pass
-        lines = 0
-        while self.status() == Work.Status.RUNNING:
-            log, lines = self.log(lines)
+        while self.status == Work.Status.RUNNING:
+            log = self.log
             if len(log) > 0:
                 self.socketio.emit("updateJob", user_data, to=self.mun_code)
             self.socketio.sleep(0.5)
-        log, lines = self.log(lines)
+        log = self.log
         if len(log) > 0:
             self.socketio.emit("updateJob", user_data, to=self.mun_code)
-        if self.status() == Work.Status.DONE:
+        if self.status == Work.Status.DONE:
             self.socketio.emit("done", to=self.mun_code)
 
+    @property
     def current_args(self):
         if self.options.building and not self.options.address:
             return "-b"
@@ -277,33 +294,40 @@ class Work(Process):
             return "-d"
         return ""
 
-    def next_args(self):
-        if self.status() == self.Status.DONE:
-            if self._path_islink("tasks-b") and not self._path_exists("tasks-d"):
-                return "-d"
-            if self._path_islink("tasks-d") and not self._path_exists("tasks-b"):
-              return "-b"
+    @property
+    def tasks_dir(self):
+        return "tasks" + self.current_args
+    
+    @property
+    def target_dir(self):
+        return self.split or ""
+
+    @property
+    def last_args(self):
+        if self._path_exists(self.target_dir, "tasks-b"):
+            return "" if self._path_exists(self.target_dir, "tasks-d") else "-b"
+        if self._path_exists(self.target_dir, "tasks-d"):
+            return "-d"
         return ""
 
-    def last_args(self):
-        if self.status() == self.Status.DONE:
-            if self._path_islink("tasks-b") and not self._path_exists("tasks-d"):
-                return "-b"
-            if self._path_islink("tasks-d") and not self._path_exists("tasks-b"):
-              return "-d"
-        return ""
+    @property
+    def next_args(self):
+        return "" if not self.last_args else "-d" if self.last_args == "-b" else "-b"
+    
+    @property
+    def type(self):
+        type = "b" if self._path_exists(self.target_dir, "tasks-b") else ""
+        type += "d" if self._path_exists(self.target_dir, "tasks-d") else ""
+        return type
 
     def run(self):
-        self._read_cache()
-        if self.last_args():
-            src = self._path("tasks")
-            dst = self._path("tasks" + self.last_args())
-            os.remove(dst)
-            os.rename(src, dst)
-        self._path_remove("catatom2osm.log")
         self._path_remove("report.txt")
+        self._path_remove("catatom2osm.log")
+        if not (self.options.address and self._path_exists("highway_names.csv")):
+            self._path_remove("report.json")
+        self._read_cache()
         socketio_logger = logging.getLogger("socketio.server")
-        log = cat_config.setup_logger(log_path=self._path())
+        log = cat_config.setup_logger(log_path=self.path)
         log.handlers += socketio_logger.handlers
         log.setLevel(logging.INFO)
         log.app_level = logging.INFO
@@ -312,17 +336,15 @@ class Work(Process):
             json.dump(self.user, fo)
         try:
             qgs = QgsSingleton()
-            os.chdir(self._path())
-            CatAtom2Osm.create_and_run(self._path(), self.options)
+            os.chdir(self.path)
+            CatAtom2Osm.create_and_run(self.path, self.options)
             qgs.exitQgis()
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             log.error(msg)
-        target = self.current_args()
-        if target and not self._path_islink("tasks" + target):
-            os.symlink(self._path("tasks"), self._path("tasks" + target))
         self._backup_files()
 
+    @property
     def status(self):
         if self._path_exists() and self._path_exists("user.json"):
             try:
@@ -337,17 +359,50 @@ class Work(Process):
                     return Work.Status.REVIEW
                 if self._path_exists("review.txt"):
                     return Work.Status.FIXME
-                if self._path_exists("tasks"):
-                    if not self.split is None:
-                        if not self._path_exists("tasks", self.split):
-                            return Work.Status.AVAILABLE
+                fp = self._path(self.target_dir, self.tasks_dir)
+                if self._path_exists(self.target_dir, self.tasks_dir):
                     return Work.Status.DONE
+                else:
+                    return Work.Status.AVAILABLE
             return Work.Status.RUNNING
         else:
             return Work.Status.AVAILABLE
 
-    def log(self, from_row=0):
-        return self._get_file("catatom2osm.log", from_row)
+    def get_dict(self, msg=""):
+        data = {
+            "cod_municipio": self.mun_code,
+            "propietario": Work.get_user(self.mun_code),
+            "mensaje": msg,
+            "linea": self.linea,
+            "informe": self.report_txt,
+            "report": self.report,
+            "revisar": [],
+            "callejero": [],
+            "info": None,
+            "next_args": self.next_args,
+        }
+        data["cod_division"] = self.split or ""
+        status = self.status
+        data["estado"] = status.name
+        data["type"] = self.type
+        data["log"] = self.log if status != Work.Status.AVAILABLE else []
+        data["current_args"] = self.current_args
+        data["edificios"] = self.options.building
+        data["direcciones"] = self.options.address
+        if status in [Work.Status.REVIEW, Work.Status.FIXME, Work.Status.DONE]:
+            data["callejero"] = self.highway_names
+        if status == Work.Status.FIXME or status == Work.Status.DONE:
+            data["revisar"] = self.review
+        if status != Work.Status.RUNNING:
+            data["charla"] = self.chat
+        if status == Work.Status.AVAILABLE:
+            data["info"] = self.info
+        return data
+
+    @property
+    def log(self):
+        log, self.linea = self._get_file("catatom2osm.log", from_row=self.linea)
+        return log
 
     def get_highway_name(self, street):
         if self._path_exists("address.geojson"):
@@ -389,40 +444,91 @@ class Work(Process):
                 dict2csv(fn, hgwnames)
         return data
 
+    @property
     def highway_names(self):
-        highway_names = self._get_file("highway_names.csv")[0]
-        if not highway_names:
-            highway_names = self._get_file("tasks/highway_names.csv")[0]
+        highway_names = self._get_file(self.report_path or "", "highway_names.csv")[0]
         return [row.split("\t") for row in highway_names]
 
-    def report(self):
-        return self._get_file("report.txt")[0]
+    def search_report(self):
+        fn = "report.json"
+        fp = self._path(fn)
+        if self.current_args:
+            fp = self._path(self.target_dir, self.tasks_dir, fn)
+        elif self.target_dir:
+            tasks = "tasks-" + self.type[:1] if self.type else "tasks"
+            fp = self._path(self.target_dir, tasks, fn)
+        report = self.get_report_json(fp)
+        self.report_path = os.path.relpath(os.path.dirname(fp), self.path) if report else False
+        if not self.split:
+            self.split = report.get("split_id", None)
+        return report
 
-    def report_json(self):
-        if self._path_exists("report.json"):
-            with open(self._path("report.json"), "r") as fo:
+    def get_report_json(self, fp):
+        if os.path.exists(fp):
+            with open(fp, "r") as fo:
                 report = json.load(fo)
             report.pop("min_level", None)
             report.pop("max_level", None)
             return report
         return {}
 
+    @property
+    def report_txt(self):
+        return [] if self.report_path == False else self._get_file(self.report_path, "report.txt")[0] or []
+
+    @property
     def review(self):
         review = []
-        fn = "review.txt"
-        if not self._path_exists(fn):
-            fn = "review.txt.bak"
-        if self._path_exists(fn):
+        fp = self._path(self.report_path or "", "review.txt")
+        if self._path_exists(fp):
             review = [
                 self._get_fixme_dict(k, v)
-                for k, v in csv2dict(self._path(fn)).items()
+                for k, v in csv2dict(self._path(fp)).items()
             ]
         return review
 
+    def _clean_root(self):
+        for fn in os.listdir(self.path):
+            fp = self._path(fn)
+            if not os.path.isdir(fp):
+                keep = False
+                exceptions = ["splits.json", "info", "user.json"]
+                while len(exceptions) > 0 and not keep:
+                    keep = fn.startswith(exceptions.pop())
+                if not keep:
+                    os.remove(fp)
+
+    def _recover(self):
+        report = []
+        cwd = os.getcwd()
+        if self._path_exists(self.target_dir):
+            os.chdir(self._path(self.target_dir))
+            report = glob.glob("**/report.txt", recursive=True)
+        if not report:
+            os.chdir(self.path)
+            report = glob.glob("**/report.txt", recursive=True)
+        os.chdir(cwd)
+        if report:
+            fp = os.path.dirname(report[0])
+            source = self._path(self.target_dir if fp.startswith("tasks") else "", fp)
+            for fn in os.listdir(source):
+                if (
+                    not fn.endswith(".osm.gz")
+                    and fn != "highway_names.csv"
+                    and not fn.startswith("review.txt")
+                ):
+                    shutil.copy(self._path(source, fn), self.path)
+
     def delete(self):
-        if self.split:
-            return self._path_remove("tasks", self.split)
-        return self._path_remove()
+        self._clean_root()
+        self._path_remove("backup")
+        self._path_remove(self.target_dir, self.tasks_dir)
+        if self.target_dir and self._path_exists(self.target_dir):
+            if len(os.listdir(self._path(self.target_dir))) == 0:
+                self._path_remove(self.target_dir)
+        self._recover()
+        if not self._path_exists("report.txt"):
+            self._path_remove("user.json")
 
     def _splits(self):
         divisiones = [
@@ -436,11 +542,12 @@ class Work(Process):
             json.dump(divisiones, fo)
         return divisiones
 
+    @property
     def splits(self):
         self._path_create()
         fp = os.path.join(CACHE_DIR, self.mun_code, "splits.json")
         if not self._path_exists("splits.json") and os.path.exists(fp):
-            shutil.copy(fp, self._path())
+            shutil.copy(fp, self.path)
         if self._path_exists("splits.json"):
             with open(self._path("splits.json"), "r") as fo:
                 divisiones = json.load(fo)
@@ -453,6 +560,7 @@ class Work(Process):
             "divisiones": divisiones,
         }
 
+    @property
     def chat(self):
         chat = []
         if self._path_exists("chat.json"):
@@ -460,6 +568,7 @@ class Work(Process):
                 chat = json.load(fo)
         return chat
 
+    @property
     def info(self):
         info = None
         fn = f"info_{self.split}.json" if self.split else "info.json"
@@ -470,7 +579,7 @@ class Work(Process):
         return info
 
     def add_message(self, msg):
-        chat = self.chat()
+        chat = self.chat
         chat.append(msg)
         with open(self._path("chat.json"), "w") as fo:
             json.dump(chat, fo)

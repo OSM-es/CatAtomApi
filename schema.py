@@ -6,6 +6,7 @@ class JobConfigSchema(Schema):
     parcel_dist = fields.Integer()
 
 class JobSchema(Schema):
+    linea = fields.Integer()
     building = fields.Bool()
     address = fields.Bool()
     config = fields.Nested(JobConfigSchema())

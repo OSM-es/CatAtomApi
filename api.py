@@ -53,6 +53,7 @@ for fn in ['results', 'backup', 'cache']:
     if not os.path.exists(p):
         os.mkdir(p)
 
+
 class Login(Resource):
     def get(self):
         callback = request.args.get('callback', False)
@@ -107,51 +108,19 @@ class Municipality(Resource):
     def get(self, mun_code):
         """Devuelve lista de distritos/barrios"""
         job = Work.validate(mun_code)
-        return job.splits()
+        return job.splits
 
 
 class Job(Resource):
     def __init__(self):
-        self.post_parser = schema.JobSchema()
+        self.parser = schema.JobSchema()
 
     def get(self, mun_code, split=None):
         """Estado del proceso de un municipio."""
-        linea = int(request.args.get("linea", 0))
-        job = Work.validate(mun_code, split=split)
-        status = job.status()
-        msg = status_msg[status][1]
-        log = []
-        if status != Work.Status.AVAILABLE: 
-            log, linea = job.log(linea)
-        data = {
-            "cod_municipio": mun_code,
-            "cod_division": split or "",
-            "estado": status.name,
-            "propietario": Work.get_user(mun_code),
-            "mensaje": msg,
-            "linea": linea,
-            "log": log,
-            "informe": [],
-            "report": {},
-            "revisar": [],
-            "callejero": [],
-            "info": None,
-        }
-        if status != Work.Status.AVAILABLE and status != Work.Status.RUNNING: 
-            data["informe"] = job.report()
-            data["report"] = job.report_json()
-            if "split_id" in data["report"]:
-                data["cod_division"] = data["report"]["split_id"]
-        if status in [Work.Status.REVIEW, Work.Status.FIXME, Work.Status.DONE]:
-            data["callejero"] = job.highway_names()
-        if status == Work.Status.FIXME or status == Work.Status.DONE:
-            data["revisar"] = job.review()
-        if status == Work.Status.DONE:
-            data["next_args"] = job.next_args() or ""
-        if status != Work.Status.RUNNING:
-            data["charla"] = job.chat()
-        if status == Work.Status.AVAILABLE:
-            data["info"] = job.info()
+        args = self.parser.load(request.args)
+        job = Work.validate(mun_code, split, **args)
+        data = job.get_dict()
+        data["mensaje"] = status_msg[job.status][1]
         return data
 
     @user.auth.login_required
@@ -159,11 +128,11 @@ class Job(Resource):
     def post(self, mun_code, split=None):
         """Procesa un municipio."""
         data = json.loads(request.data)
-        args = self.post_parser.load(data)
+        args = self.parser.load(data)
         job = Work.validate(mun_code, split, **args, socketio=socketio)
-        status = job.status()
+        status = job.status
         if (
-            (status == Work.Status.DONE and job.current_args() == job.last_args())
+            (status == Work.Status.DONE and job.current_args == job.last_args)
             or status in [Work.Status.FIXME, Work.Status.RUNNING]
         ):
             msg = status_msg[status][1].format(mun_code)
@@ -176,38 +145,20 @@ class Job(Resource):
         except Exception as e:
             msg = e.message if getattr(e, "message", "") else str(e)
             abort(500, message=msg)
-        return {
-            "estado": Work.Status.RUNNING.name,
-            "cod_municipio": mun_code,
-            "cod_division": split or "",
-            "mensaje": "Procesando...",
-        }
+        return job.get_dict("Procesando...")
 
     @user.auth.login_required
     @check_owner
     def delete(self, mun_code, split=None):
         """Eliminar proceso."""
         __ = request.data  # https://github.com/pallets/flask/issues/4546
-        job = Work.validate(mun_code, split)
-        if not job.delete():
-            abort(410, message="No se pudo eliminar")
+        args = self.parser.load(request.args)
+        job = Work.validate(mun_code, split, **args)
         data = dict(**g.user_data, room=mun_code)
         socketio.emit("deleteJob", data, to=mun_code)
-        return {
-            "cod_municipio": mun_code,
-            "cod_division": split or "",
-            "propietario": None,
-            "estado": Work.Status.AVAILABLE.name,
-            "mensaje": "Proceso eliminado correctamente",
-            "linea": 0,
-            "log": "",
-            "informe": [],
-            "report": [],
-            "revisar": [],
-            "callejero": [],
-            "info": job.info(),
-
-        }
+        job.delete()
+        job = Work(mun_code)
+        return job.get_dict("Proceso eliminado correctamente")
 
 
 class Highway(Resource):
@@ -240,27 +191,24 @@ class Highway(Resource):
 class Fixme(Resource):
 
     @user.auth.login_required
-    def get(self, mun_code):
-        """Bloquea el fixme por un usuario"""
-        job = Work.validate(mun_code)
-        fixme = request.args.get('fixme')
+    def get(self, mun_code, split=None):
+        job = Work.validate(mun_code, split)
+        fixme = request.args.get('fixme', None)
         status = job.lock_fixme(fixme)
         socketio.emit("fixme", status, to=mun_code)
         return status
 
     @user.auth.login_required
-    def post(self, mun_code):
-        """Desbloquea el fixme"""
-        job = Work.validate(mun_code)
-        fixme = request.json.get('fixme')
+    def post(self, mun_code, split=None):
+        job = Work.validate(mun_code, split)
+        fixme = request.json.get('fixme', None)
         status = job.unlock_fixme(fixme)
         socketio.emit("fixme", status, to=mun_code)
         return status
 
     @user.auth.login_required
-    def put(self, mun_code):
-        """Recarga archivo de fixme"""
-        job = Work.validate(mun_code)
+    def put(self, mun_code, split=None):
+        job = Work.validate(mun_code, split)
         file = request.files["file"]
         try:
             status = job.save_fixme(file)
@@ -276,12 +224,11 @@ class Fixme(Resource):
     @user.auth.login_required
     @check_owner
     def delete(self, mun_code, split=None):
-        """Marca revisión como completada si no quedan fixmes"""
-        job = Work.validate(mun_code, split=split)
+        job = Work.validate(mun_code, split)
+        job.get_dict(status_msg[Work.Status.DONE])
         job.clear_fixmes()
-        data = dict(**g.user_data, room=mun_code)
-        socketio.emit("done", data, to=mun_code)
-        return Job().get(mun_code, split)
+        socketio.emit("done", dict(**g.user_data, room=mun_code), to=mun_code)
+        return job.get_dict(status_msg[Work.Status.DONE])
 
 
 class Export(Resource):
