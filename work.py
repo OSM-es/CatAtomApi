@@ -132,8 +132,10 @@ class Work(Process):
         return os.path.exists(self._path(*args))
 
     def _path_create(self, *args):
-        if not self._path_exists(*args):
+        fp = self._path(*args)
+        if not os.path.exists(fp):
             os.mkdir(self._path(*args))
+        return fp
 
     def _path_remove(self, *args):
         if self._path_exists(*args):
@@ -169,17 +171,21 @@ class Work(Process):
         for fp in glob.iglob(self._path("A.ES.SDGC.??.?????.zip")):
             fn = os.path.basename(fp)
             shutil.move(fp, os.path.join(backup, fn))
-        self._path_create("backup")
+        backup = self._path_create("backup")
         if self._path_exists("highway_names.csv"):
-            shutil.copy(self._path("highway_names.csv"), self._path("backup"))
+            shutil.copy(self._path("highway_names.csv"), backup)
         if self._path_exists("review.txt"):
-            shutil.copy(self._path("review.txt"), self._path("backup"))
+            shutil.copy(self._path("review.txt"), backup)
             review = csv2dict(self._path("review.txt"))
             for fixme in review.keys():
-                src = self._path(self.target_dir, self.tasks_dir, fixme + '.osm.gz')
-                dst = self._path('backup', fixme + '.osm.gz')
+                fn = fixme + ".osm.gz"
+                src = self._path(self.target_dir, self.tasks_dir, fn)
+                dst = self._path("backup", fn)
                 shutil.copy(src, dst)
-
+        if self._path_exists(self.target_dir, self.tasks_dir):
+            dst = self._path(self.target_dir, self.tasks_dir, "backup")
+            shutil.copytree(backup, dst, dirs_exist_ok=True)
+            
     def get_options_from_report(self, data):
         options = data.get("options", False)
         if options:
@@ -263,7 +269,6 @@ class Work(Process):
         target = self._path(self.target_dir, self.tasks_dir, "review.txt")
         review = csv2dict(fp)
         if sum([int(fixme[0]) for fixme in review.values()]) == 0:
-            os.rename(target, target + ".bak")
             shutil.move(fp, target)
 
     def export(self):
@@ -517,6 +522,7 @@ class Work(Process):
             for fn in os.listdir(source):
                 if (
                     not fn.endswith(".osm.gz")
+                    and fn != "backup"
                     and fn != "highway_names.csv"
                     and not fn.startswith("review.txt")
                 ):
