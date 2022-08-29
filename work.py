@@ -434,6 +434,7 @@ class Work(Process):
             conv = data["conv"]
             hgwnames[cat] = hgwnames_bck[cat]
             data["conv"] = hgwnames[cat][0]
+            data["src"] = hgwnames[cat][1]
             dict2csv(fn, hgwnames)
         return data
         
@@ -446,9 +447,10 @@ class Work(Process):
             conv = data["conv"]
             if cat in hgwnames:
                 user = getattr(g, "user_data", "")
+                data["src"] = hgwnames[cat][1]
                 data["osm_id"] = user["osm_id"]
                 data["username"] = user["username"]
-                hgwnames[cat] = [conv, user["osm_id"], user["username"]]
+                hgwnames[cat] = [conv, data["src"], user["osm_id"], user["username"]]
                 dict2csv(fn, hgwnames)
         return data
 
