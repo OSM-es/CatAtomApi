@@ -61,8 +61,8 @@ class Work(Process):
     def __init__(
         self,
         mun_code,
-        user=None,
         split=None,
+        user=None,
         building=True,
         address=True,
         linea=0,
@@ -115,7 +115,7 @@ class Work(Process):
     def validate(mun_code, split=None, **kwargs):
         user = getattr(g, "user_data", "")
         try:
-            job = Work(mun_code, user, split, **kwargs)
+            job = Work(mun_code, split, user, **kwargs)
         except CatValueError as e:
             abort(404, message=str(e))
         return job
@@ -129,6 +129,47 @@ class Work(Process):
             "username": v[2] if len(v) > 2 else None,
             "locked": v[3] if len(v) > 3 else None,
         }
+
+    @staticmethod
+    def list_jobs():
+        data = []
+        for fp in sorted(glob.glob(os.path.join(WORK_DIR, "?????"))):
+            fn = os.path.join(fp, "user.json")
+            if os.path.exists(fn):
+                mun_code = os.path.basename(fp)
+                job = Work(mun_code)
+                user = Work.get_user(mun_code)
+                row = {
+                    "mun_code": mun_code,
+                    "name": job.name,
+                    "split_id": None,
+                    "split_name": "",
+                    "user": user["username"]
+                }
+                divs = []
+                for split in os.listdir(job.path):
+                    if (
+                        os.path.isdir(job._path(split))
+                        and split != "backup"
+                        and not split.startswith("tasks")
+                    ):
+                        div = Work(mun_code, split)
+                        row["split_id"] = split
+                        row["split_name"] = div.report["split_name"]
+                        row["status"] = div.status.name
+                        row["tasks"] = div.report.get("tasks", 0)
+                        row["parts"] = div.report.get("out_parts", 0)
+                        row["address"] = div.report.get("out_address", 0)
+                        divs.append(dict(row))
+                if divs:
+                    data.extend(sorted(divs, key=lambda div: div["split_name"]))
+                else:
+                    row["status"] =  job.status.name
+                    row["tasks"] = job.report.get("tasks", 0)
+                    row["parts"] = job.report.get("out_parts", 0)
+                    row["address"] = job.report.get("out_address", 0)
+                    data.append(row)
+        return data
 
     def _path(self, *args):
         return os.path.join(self.path, *args)

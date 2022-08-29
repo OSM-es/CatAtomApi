@@ -115,8 +115,10 @@ class Job(Resource):
     def __init__(self):
         self.parser = schema.JobSchema()
 
-    def get(self, mun_code, split=None):
+    def get(self, mun_code=None, split=None):
         """Estado del proceso de un municipio."""
+        if not mun_code:
+            return Work.list_jobs()
         args = self.parser.load(request.args)
         job = Work.validate(mun_code, split, **args)
         data = job.get_dict()
@@ -254,6 +256,8 @@ api.add_resource(Province, '/prov/<string:prov_code>')
 api.add_resource(Municipality, '/mun/<string:mun_code>')
 api.add_resource(
     Job,
+    '/job',
+    '/job/',
     '/job/<string:mun_code>',
     '/job/<string:mun_code>/',
     '/job/<string:mun_code>/<string:split>',
