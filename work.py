@@ -18,8 +18,8 @@ from flask import g
 from flask_restful import abort
 from werkzeug.utils import secure_filename
 
-from csvtools import csv2dict, dict2csv
 from catatom2osm import boundary
+from catatom2osm import csvtools
 from catatom2osm import config as cat_config
 from catatom2osm import osmxml
 from catatom2osm.app import CatAtom2Osm, QgsSingleton
@@ -30,6 +30,11 @@ from catatom2osm.exceptions import CatValueError
 WORK_DIR = os.path.join(os.environ['HOME'], 'results')
 BACKUP_DIR = os.path.join(os.environ['HOME'], 'backup')
 CACHE_DIR = os.path.join(os.environ['HOME'], 'cache')
+
+dict2csv = csvtools.dict2csv
+ 
+def csv2dict(csv_path):
+    return csvtools.csv2dict(csv_path, single=False)
 
 def check_owner(f):
     @wraps(f)
