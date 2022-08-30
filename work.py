@@ -316,6 +316,7 @@ class Work(Process):
         review = csv2dict(fp)
         if sum([int(fixme[0]) for fixme in review.values()]) == 0:
             shutil.move(fp, target)
+            self.linea = 0
 
     def export(self):
         if self._path_exists(self.target_dir, self.tasks_dir):
@@ -376,7 +377,6 @@ class Work(Process):
 
     def run(self):
         self._path_remove("report.txt")
-        self._path_remove("catatom2osm.log")
         if not (self.options.address and self._path_exists("highway_names.csv")):
             self._path_remove("report.json")
         self._read_cache()
@@ -397,17 +397,18 @@ class Work(Process):
             msg = e.message if getattr(e, "message", "") else str(e)
             log.error(msg)
         self._backup_files()
+        if self.status in [Work.Status.DONE, Work.Status.FIXME]:
+            src = self._path("catatom2osm.log")
+            dst = self._path(self.target_dir, self.tasks_dir, "catatom2osm.log")
+            shutil.move(src, dst)
 
     @property
     def status(self):
         if self._path_exists() and self._path_exists("user.json"):
-            try:
-                with open(self._path("catatom2osm.log"), "r") as fo:
-                    log = fo.read()
-                    if "ERROR" in log:
-                        return Work.Status.ERROR
-            except FileNotFoundError:
-                pass
+            if self._path_exists("catatom2osm.log"):
+                log, __ = self.log()
+                if log and "ERROR" in log[-1]:
+                    return Work.Status.ERROR
             if self._path_exists("report.txt"):
                 if self._path_exists("highway_names.csv"):
                     return Work.Status.REVIEW
@@ -439,7 +440,7 @@ class Work(Process):
         status = self.status
         data["estado"] = status.name
         data["type"] = self.type
-        data["log"] = self.log if status != Work.Status.AVAILABLE else []
+        data["log"], self.linea = self.log(self.linea)
         data["current_args"] = self.current_args
         data["edificios"] = self.options.building
         data["direcciones"] = self.options.address
@@ -453,10 +454,11 @@ class Work(Process):
             data["info"] = self.info
         return data
 
-    @property
-    def log(self):
-        log, self.linea = self._get_file("catatom2osm.log", from_row=self.linea)
-        return log
+    def log(self, linea = 0):
+        fp = self._path(self.target_dir, self.tasks_dir, "catatom2osm.log")
+        if self._path_exists("catatom2osm.log"):
+            fp = self._path("catatom2osm.log")
+        return self._get_file(fp, from_row=linea)
 
     def get_highway_name(self, street):
         if self._path_exists("address.geojson"):
