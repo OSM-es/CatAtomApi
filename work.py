@@ -405,10 +405,9 @@ class Work(Process):
     @property
     def status(self):
         if self._path_exists() and self._path_exists("user.json"):
-            if self._path_exists("catatom2osm.log"):
-                log, __ = self.log()
-                if log and "ERROR" in log[-1]:
-                    return Work.Status.ERROR
+            log, __ = self.log()
+            if log and "ERROR" in log[-1]:
+                return Work.Status.ERROR
             if self._path_exists("report.txt"):
                 if self._path_exists("highway_names.csv"):
                     return Work.Status.REVIEW
@@ -597,6 +596,7 @@ class Work(Process):
             {
                 "osm_id": district[1],
                 "nombre": f"{'  ' if district[0] else ''}{district[2]} {district[3]}",
+                "estado": Work(self.mun_code, district[1]).status.name,
             } 
             for district in get_districts(self.mun_code)
         ]

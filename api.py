@@ -94,7 +94,11 @@ class Province(Resource):
             abort(404, message=msg)
         office = cat_config.prov_codes[prov_code]
         municipalities = [
-            {"cod_municipio": mun[0], "nombre": mun[2]}
+            {
+                "cod_municipio": mun[0],
+                "nombre": mun[2],
+                "estado": Work(mun[0]).status.name,
+            }
             for mun in csvtools.startswith(fn, prov_code)
         ]
         return {
