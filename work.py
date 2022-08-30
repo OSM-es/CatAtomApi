@@ -503,7 +503,7 @@ class Work(Process):
 
     @property
     def highway_names(self):
-        highway_names = self._get_file(self.report_path, "highway_names.csv")[0]
+        highway_names = self._get_file(self.report_path or "", "highway_names.csv")[0]
         return [row.split("\t") for row in highway_names]
 
     def search_report(self):
@@ -515,10 +515,10 @@ class Work(Process):
             tasks = "tasks-" + self.type[:1] if self.type else "tasks"
             fp = self._path(self.target_dir, tasks, fn)
         report = self.get_report_json(fp)
-        self.report_path = ""
+        self.report_path = False
         fp = os.path.relpath(os.path.dirname(fp), self.path)
-        if report and fp != ".":
-            self.report_path = fp
+        if report:
+            self.report_path = "" if fp == "." else fp
         if not self.split:
             self.split = report.get("split_id", None)
         return report
@@ -534,12 +534,12 @@ class Work(Process):
 
     @property
     def report_txt(self):
-        return self._get_file(self.report_path, "report.txt")[0]
+        return [] if self.report_path == False else self._get_file(self.report_path, "report.txt")[0]
 
     @property
     def review(self):
         review = []
-        fp = self._path(self.report_path, "review.txt")
+        fp = self._path(self.report_path or "", "review.txt")
         if self._path_exists(fp):
             review = [
                 self._get_fixme_dict(k, v)
