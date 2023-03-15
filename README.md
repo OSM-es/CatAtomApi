@@ -16,6 +16,8 @@ Levantar el servicio
 
 Para otros usos ver el Makefile
 
+    make
+
 ## Documentación
 Ver [doc_api.md](doc_api.md)
 
