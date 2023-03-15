@@ -10,6 +10,9 @@ https://docs.docker.com/engine/install/linux-postinstall/
 ## Instalación
 
     make build
+    docker network create catatom
+    sudo mkdir /var/catastro
+    sudo chmod www-data:www-data /var/catastro
 
 ## Uso
 
@@ -25,5 +28,4 @@ Para otros usos ver el Makefile
 Ver [doc_api.md](doc_api.md)
 
 ## Producción
-Crear carpeta /var/catastro con propietario www-data:www-data
 Crear api.env siguiendo instrucciones de config.py
