@@ -4,9 +4,12 @@ API web para interactuar con catatom2osm
 ## Requisitos
 Docker https://www.docker.com/get-started
 
+En linux añade tu usuario al grupo docker
+https://docs.docker.com/engine/install/linux-postinstall/
+
 ## Instalación
 
-    sudo make build
+    make build
 
 ## Uso
 
