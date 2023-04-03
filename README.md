@@ -12,13 +12,15 @@ https://docs.docker.com/engine/install/linux-postinstall/
     make build
     docker network create catatom
     sudo mkdir /var/catastro
-    sudo chmod www-data:www-data /var/catastro
+    sudo chown www-data:www-data /var/catastro
 
 ## Uso
 
 Levantar el servicio
 
     make up
+
+Queda disponible en http://localhost:5000
 
 Para otros usos ver el Makefile
 
