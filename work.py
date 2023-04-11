@@ -4,9 +4,10 @@ import gzip
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
-import re
+import time
 from telnetlib import STATUS
 import time
 from enum import Enum, auto
@@ -30,6 +31,7 @@ from catatom2osm.exceptions import CatValueError
 WORK_DIR = os.path.join(os.environ['HOME'], 'results')
 BACKUP_DIR = os.path.join(os.environ['HOME'], 'backup')
 CACHE_DIR = os.path.join(os.environ['HOME'], 'cache')
+FIXME_LOCK_TIMEOUT = 24 * 60 * 60 # 1 day
 
 dict2csv = csvtools.dict2csv
  
@@ -122,12 +124,18 @@ class Work(Process):
 
     @staticmethod
     def _get_fixme_dict(k, v):
+        locked = v[3] if len(v) > 3 else None
+        if locked:
+            lapse = FIXME_LOCK_TIMEOUT + 1 if locked == 'true' else time.time() - float(v[3])
+            if lapse > FIXME_LOCK_TIMEOUT:
+                v = v[0]
+                locked = None
         return {
             "filename": k + ".osm.gz",
             "fixmes": v[0] if len(v) > 0 else None,
             "osm_id": v[1] if len(v) > 1 else None,
             "username": v[2] if len(v) > 2 else None,
-            "locked": v[3] if len(v) > 3 else None,
+            "locked": locked,
         }
 
     @staticmethod
@@ -256,7 +264,7 @@ class Work(Process):
                 str(fixmes),
                 g.user_data["osm_id"],
                 g.user_data["username"],
-                "true",
+                str(time.time()),
             ]
             review[taskname] = fixme
             dict2csv(fn, review)
