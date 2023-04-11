@@ -13,7 +13,7 @@ https://docs.docker.com/engine/install/linux-postinstall/
     make build
     docker network create catatom
 
-Crear api.env siguiendo instrucciones de config.py
+Crear api.env siguiendo las instrucciones de config.py
 
 ## Desarrollo
 
@@ -25,7 +25,9 @@ Queda disponible en http://localhost:5001
 
 ## Producción
 
-Levantar el servicio
+Siguiendo las instrucciones de config.py registrar https://cat.cartobase.es
+y añadir las claves a api.env
+Levantar el servicio con
 
     make up
 
