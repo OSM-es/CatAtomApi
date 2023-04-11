@@ -9,12 +9,21 @@ https://docs.docker.com/engine/install/linux-postinstall/
 
 ## Instalación
 
+    sudo make install
     make build
     docker network create catatom
-    sudo mkdir /var/catastro
-    sudo chown www-data:www-data /var/catastro
 
-## Uso
+Crear api.env siguiendo instrucciones de config.py
+
+## Desarrollo
+
+Servidor de desarrollo
+
+    make debug
+
+Queda disponible en http://localhost:5001
+
+## Producción
 
 Levantar el servicio
 
@@ -28,6 +37,3 @@ Para otros usos ver el Makefile
 
 ## Documentación
 Ver [doc_api.md](doc_api.md)
-
-## Producción
-Crear api.env siguiendo instrucciones de config.py

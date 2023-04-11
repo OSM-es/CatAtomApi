@@ -3,10 +3,13 @@ import os
 import oauthlib.oauth1
 from dotenv import load_dotenv
 
-# Para configuración de producción crea el archivo api.env con las variables:
+# Registra la aplicación en https://www.openstreetmap.org/user/<username>/oauth_clients/new
+# En "URL de la aplicación principal" debes poner: http://localhost:8080
+# y marcar la opción "leer sus preferencias de usuario"
+# Crea el archivo api.env con las variables:
 # FLASK_SECRET_KEY = "Genera una clave aleatoria para securizar las sesiones"
-# OSM_CLIENT_ID = "Registra la aplicación en https://osm.org/user/Javier Sanchez/oauth_clients"
-# OSM_CLIENT_SECRET = 
+# OSM_CLIENT_ID = "Clave de Consumidor"
+# OSM_CLIENT_SECRET = "Secreto de Consumidor"
 
 load_dotenv("api.env")
 
