@@ -13,7 +13,7 @@ cat_config.get_user_config('catconfig.yaml')
 
 from catatom2osm import csvtools
 
-import user
+import auth
 import schema
 from work import Work, check_owner
 
@@ -54,23 +54,22 @@ for fn in ['results', 'backup', 'cache']:
         os.mkdir(p)
 
 
-class Login(Resource):
-    def get(self):
-        callback = request.args.get('callback', False)
-        if (callback):
-            return user.get_authorize_url(callback)
-        abort(400)
+@app.route('/login')
+def login():
+    return auth.login()
 
-    @user.auth.login_required
-    def put(self):
-        return {"ping": "ok"}
+@app.route('/authorize')
+def authorize():
+    return auth.authorize()
 
-class Authorize(Resource):
-    def get(self):
-        user_params = user.authorize()
-        if user_params is None:
-            abort(404, message="Autorización denegada")
-        return user_params
+@app.route('/logout')
+def logout():
+    return auth.logout()
+
+@app.route('/user')
+def user_info():
+    return auth.user()
+
 
 class Provinces(Resource):
     def get(self):
@@ -129,7 +128,7 @@ class Job(Resource):
         data["mensaje"] = status_msg[job.status][1]
         return data
 
-    @user.auth.login_required
+    @auth.auth.login_required
     @check_owner
     def post(self, mun_code, split=None):
         """Procesa un municipio."""
@@ -153,7 +152,7 @@ class Job(Resource):
             abort(500, message=msg)
         return job.get_dict("Procesando...")
 
-    @user.auth.login_required
+    @auth.auth.login_required
     @check_owner
     def delete(self, mun_code, split=None):
         """Eliminar proceso."""
@@ -176,13 +175,13 @@ class Highway(Resource):
         job = Work.validate(mun_code, socketio=socketio)
         return job.get_highway_name(street)
 
-    @user.auth.login_required
+    @auth.auth.login_required
     def post(self, mun_code):
         """Restaura una entrada del callejero"""
         job = Work.validate(mun_code, socketio=socketio)
         return job.undo_highway_name(request.json)
 
-    @user.auth.login_required
+    @auth.auth.login_required
     def put(self, mun_code):
         """Edita una entrada del callejero"""
         job = Work.validate(mun_code, socketio=socketio)
@@ -197,7 +196,7 @@ class Highway(Resource):
 
 class Fixme(Resource):
 
-    @user.auth.login_required
+    @auth.auth.login_required
     def get(self, mun_code, split=None):
         job = Work.validate(mun_code, split)
         fixme = request.args.get('fixme', None)
@@ -205,7 +204,7 @@ class Fixme(Resource):
         socketio.emit("fixme", status, to=mun_code)
         return status
 
-    @user.auth.login_required
+    @auth.auth.login_required
     def post(self, mun_code, split=None):
         job = Work.validate(mun_code, split)
         fixme = request.json.get('fixme', None)
@@ -213,7 +212,7 @@ class Fixme(Resource):
         socketio.emit("fixme", status, to=mun_code)
         return status
 
-    @user.auth.login_required
+    @auth.auth.login_required
     def put(self, mun_code, split=None):
         job = Work.validate(mun_code, split)
         file = request.files["file"]
@@ -228,7 +227,7 @@ class Fixme(Resource):
         socketio.emit("fixme", status, to=mun_code)
         return status
 
-    @user.auth.login_required
+    @auth.auth.login_required
     @check_owner
     def delete(self, mun_code, split=None):
         job = Work.validate(mun_code, split)
@@ -253,8 +252,6 @@ class Export(Resource):
             abort(404, message="Proceso no encontrado")
 
 
-api.add_resource(Login, '/login')
-api.add_resource(Authorize, '/authorize')
 api.add_resource(Provinces, '/prov')
 api.add_resource(Province, '/prov/<string:prov_code>')
 api.add_resource(Municipality, '/mun/<string:mun_code>')

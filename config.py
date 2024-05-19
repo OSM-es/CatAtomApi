@@ -18,11 +18,12 @@ class Config:
     SECRET_KEY = os.getenv("FLASK_SECRET_KEY", None)
     OSM_CLIENT_ID = os.getenv("OSM_CLIENT_ID", "")
     OSM_CLIENT_SECRET = os.getenv("OSM_CLIENT_SECRET", "")
-    SESSION_COOKIE_SAMESITE = "Strict"
+    OSM_URL = os.getenv('OSM_URL', 'https://www.openstreetmap.org')
+    SESSION_COOKIE_SAMESITE = "Lax"
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 Mb
 
 class DevelopmentConfig(Config):
-    CLIENT_URL = "http://localhost:8080"
+    CLIENT_URL = os.getenv("CLIENT_URL", "http://127.0.0.1:8080")
 
 class ProductionConfig(Config):
     API_URL = "https://cat.cartobase.es/api"
