@@ -2,7 +2,8 @@
 catatom2osm/
 
 # Settings
-api.env
+.env
+.env*.local
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

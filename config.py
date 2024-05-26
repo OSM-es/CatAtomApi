@@ -11,8 +11,9 @@ from dotenv import load_dotenv
 # OSM_CLIENT_ID = "Clave de Consumidor"
 # OSM_CLIENT_SECRET = "Secreto de Consumidor"
 
-load_dotenv("api.env")
-load_dotenv(f"api.{os.getenv('FLASK_ENV', 'production')}.env")
+load_dotenv(".env")
+load_dotenv(f".env.{os.getenv('FLASK_ENV', 'production')}")
+load_dotenv(f".env.{os.getenv('FLASK_ENV', 'production')}.local", override=True)
 
 
 class Config:
