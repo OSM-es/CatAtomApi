@@ -7,7 +7,7 @@ from flask_cors import CORS
 from flask_restful import abort, Api, reqparse, Resource
 from flask_socketio import SocketIO, join_room, leave_room
 
-from config import get_config
+from config import Config
 from catatom2osm import config as cat_config
 cat_config.get_user_config('catconfig.yaml')
 
@@ -19,8 +19,7 @@ from work import Work, check_owner
 
 
 app = Flask(__name__, instance_relative_config=True)
-mode = app.config.get("ENV", "development")
-app.config.from_object(get_config(mode))
+app.config.from_object(Config)
 origins = app.config["CLIENT_URL"]
 cors = CORS(app, resources={r"/*": {"origins": origins}}, supports_credentials=True)
 socketio = SocketIO(app, cors_allowed_origins=origins)

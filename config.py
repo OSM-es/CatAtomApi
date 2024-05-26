@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 # OSM_CLIENT_SECRET = "Secreto de Consumidor"
 
 load_dotenv("api.env")
+load_dotenv("api.prod.env")
 
 
 class Config:
@@ -21,18 +22,5 @@ class Config:
     OSM_URL = os.getenv('OSM_URL', 'https://www.openstreetmap.org')
     SESSION_COOKIE_SAMESITE = "Lax"
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10 Mb
-
-class DevelopmentConfig(Config):
+    API_URL = os.getenv("API_URL", "http://127.0.0.1:5000")
     CLIENT_URL = os.getenv("CLIENT_URL", "http://127.0.0.1:8080")
-
-class ProductionConfig(Config):
-    API_URL = "https://cat.cartobase.es/api"
-    CLIENT_URL = "https://cat.cartobase.es"
-
-
-def get_config(mode="development"):
-    config_class = {
-        "development": DevelopmentConfig,
-        "production": ProductionConfig,
-    }
-    return config_class[mode]()
