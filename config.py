@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # OSM_CLIENT_SECRET = "Secreto de Consumidor"
 
 load_dotenv("api.env")
-load_dotenv("api.prod.env")
+load_dotenv(f"api.{os.getenv('FLASK_ENV', 'production')}.env")
 
 
 class Config:
