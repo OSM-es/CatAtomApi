@@ -6,8 +6,7 @@ from dotenv import load_dotenv
 # Registra la aplicación en https://www.openstreetmap.org/user/<username>/oauth_clients/new
 # En "URL de la aplicación principal" debes poner: http://localhost:8080
 # y marcar la opción "leer sus preferencias de usuario"
-# Crea el archivo api.env con las variables:
-# FLASK_SECRET_KEY = "Genera una clave aleatoria para securizar las sesiones"
+# Crea el archivo .env.development.local con las variables:
 # OSM_CLIENT_ID = "Clave de Consumidor"
 # OSM_CLIENT_SECRET = "Secreto de Consumidor"
 

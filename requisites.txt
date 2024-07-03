@@ -74,7 +74,9 @@ pyproj==2.5.0
 PyQt5==5.14.1
 pyRFC3339==1.1
 pyrsistent==0.15.5
-python-apt==2.0.1+ubuntu0.20.4.1
+# En producción carga python-apt==2.0.1+ubuntu0.20.4.1, en desarrollo python-apt==2.0.1+ubuntu0.20.4.5
+# mejor abrir versión para no liarla
+python-apt
 python-dateutil==2.7.3
 python-dotenv==0.20.0
 python-engineio==4.3.4

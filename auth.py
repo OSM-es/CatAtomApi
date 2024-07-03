@@ -1,9 +1,9 @@
 import time
-from authlib.jose import jwt
-from authlib.jose.errors import JoseError
 from authlib.integrations.flask_client import OAuth, OAuthError
-from flask import abort, current_app, jsonify, redirect, session, url_for
+from flask import abort, current_app, g, jsonify, redirect, session
 from flask_httpauth import HTTPTokenAuth
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+
 
 auth = HTTPTokenAuth(scheme="Bearer")
 oauth = OAuth()
@@ -26,8 +26,14 @@ def get_oauth():
 @auth.verify_token
 def verify_token(token):
     """Verificador utilizado por auth.login_required"""
+    serializer = URLSafeTimedSerializer(current_app.secret_key)
+    try:
+        dec_token = serializer.loads(token, max_age=864000)
+    except (SignatureExpired, BadSignature) as e:
+        return False
     oauth_token = session.get('oauth_token')
-    return oauth_token == token
+    g.user_data = session.get('user')
+    return oauth_token == dec_token
 
 def login():
     """Redirige a la página de login de OSM."""
@@ -42,11 +48,13 @@ def authorize():
     resp = get_oauth().get('user/details.json')
     resp.raise_for_status()
     data = resp.json() 
+    serializer = URLSafeTimedSerializer(current_app.secret_key)
     session['user'] = {
         'osm_id': data['user']['id'],
         'username': data['user']['display_name'],
+        'session_token': serializer.dumps(token['access_token']),
     }
-    session['oauth_token'] = token
+    session['oauth_token'] = token['access_token']
     return redirect(current_app.config.get('CLIENT_URL', '') + '/auth')
 
 def logout():
