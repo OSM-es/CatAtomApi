@@ -10,6 +10,7 @@ FROM catatom2osm4api AS base
 LABEL maintainer="javiersanp@gmail.com"
 
 ARG FLASK_ENV
+ARG user
 
 ENV APP_PATH=/opt/CatAtomAPI
 ENV PYTHONPATH=$PYTHONPATH:$APP_PATH
@@ -41,7 +42,7 @@ ENV FLASK_PORT=$FLASK_PORT
 ENV RELOAD=$RELOAD
 ENV HOME=$HOME
 
-RUN chown -R $user:$group $APP_PATH
+RUN chown -R $user:$group $APP_PATH $XDG_RUNTIME_DIR
 
 EXPOSE $FLASK_PORT
 
