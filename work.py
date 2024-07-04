@@ -91,6 +91,7 @@ class Work(Process):
             generate_config=False,
             manual=False,
             zoning=False,
+            municipality=False,
             list="",
             split=self.split,
             parcel=[],
