@@ -27,20 +27,20 @@ submodules: catatom2osm  ## Update submodules
 .PHONY: build
 build: submodules  ## Build docker image
 	@docker build --build-arg user=www-data --build-arg group=www-data --build-arg uid=$(id -u www-data) --build-arg gid=$(id -g www-data) -t catatom2osm4api catatom2osm
-	@docker-compose build
+	@docker compose build
 	
 .PHONY: up
 up: build  ## Start docker container as a service
-	@docker-compose up -d
+	@docker compose up -d
 
 .PHONY: logs
 logs:  ## Show container logs
-	@docker-compose logs -f web
+	@docker compose logs -f web
 
 .PHONY: down
 down:  ## Stop service
-	@docker-compose down
+	@docker compose down
 
 .PHONY: debug
 debug:  ## Run docker container in debug mode
-	@docker-compose run --rm -p 5001:5001 -e FLASK_ENV=development -e FLASK_PORT=5001 -e RELOAD="--reload" -v $(PWD):/opt/CatAtomAPI web
+	@docker compose run --rm -p 5001:5001 -e FLASK_ENV=development -e FLASK_PORT=5001 -e RELOAD="--reload" -v $(PWD):/opt/CatAtomAPI web
