@@ -50,7 +50,7 @@ def authorize():
     data = resp.json() 
     serializer = URLSafeTimedSerializer(current_app.secret_key)
     session['user'] = {
-        'osm_id': data['user']['id'],
+        'osm_id': str(data['user']['id']),
         'username': data['user']['display_name'],
         'session_token': serializer.dumps(token['access_token']),
     }
