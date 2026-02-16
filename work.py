@@ -43,9 +43,7 @@ def check_owner(f):
     def decorated_function(*args, **kwargs):
         mun_code = kwargs.get("mun_code", "")
         user = Work.get_user(mun_code)
-        if user and user["osm_id"] != g.user_data["osm_id"]:
-            msg = f"Proceso bloqueado por {user['username']} ({user['osm_id']})"
-            abort(409, message=msg)
+
         return f(*args, **kwargs)
     return decorated_function
 
